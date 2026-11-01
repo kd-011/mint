@@ -1,0 +1,15 @@
+{
+  "name": "mint-android",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Mint Android shell: a Capacitor WebView over your own self-hosted Mint server.",
+  "scripts": {
+    "sync": "cap sync android",
+    "build": "./build.sh"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.5.2",
+    "@capacitor/cli": "8.5.2",
+    "@capacitor/core": "8.5.2"
+  }
+}

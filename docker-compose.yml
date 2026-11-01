@@ -1,0 +1,37 @@
+# Two ways to run Mint in Docker.
+#
+#   docker compose up                          Demo: invented data, no Redbark key, nothing kept.
+#                                              Open http://127.0.0.1:8980/ (use 127.0.0.1, not localhost).
+#   docker compose --profile real up -d mint   Real: your own book. Needs a .env (copy .env.example)
+#                                              and a login proxy in front, see docs/self-hosting.md.
+#
+# Both publish on the host's loopback only. Put your own reverse proxy in front for anything else.
+services:
+  demo:
+    build: .
+    command: ["node", "scripts/demo-seed.mjs", "8980"]
+    environment:
+      MINT_PORT: "8980"
+      # The demo's small front proxy adds the gateway headers for you, so it must listen on the
+      # container's network. It is published on the host's loopback only (below).
+      MINT_DEMO_HOST: 0.0.0.0
+    ports:
+      - "127.0.0.1:8980:8980"
+    restart: "no"
+
+  mint:
+    build: .
+    profiles: ["real"]
+    env_file: .env
+    environment:
+      MINT_HOME: /data
+      MINT_HOST: 0.0.0.0
+      MINT_PORT: "8970"
+    ports:
+      - "127.0.0.1:8970:8970"
+    volumes:
+      - mint-data:/data
+    restart: unless-stopped
+
+volumes:
+  mint-data:

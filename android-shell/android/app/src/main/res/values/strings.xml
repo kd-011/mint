@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Mint</string>
+    <string name="title_activity_main">Mint</string>
+    <string name="package_name">io.github.kd011.mint</string>
+    <string name="custom_url_scheme">io.github.kd011.mint</string>
+</resources>

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Mint's near-black green everywhere, so nothing flashes white. -->
+    <color name="mint_bg">#0B0D0C</color>
+    <color name="mint_accent">#3DDC97</color>
+
+    <style name="AppTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/mint_bg</item>
+        <item name="colorPrimaryDark">@color/mint_bg</item>
+        <item name="colorAccent">@color/mint_accent</item>
+        <item name="android:windowBackground">@color/mint_bg</item>
+    </style>
+
+    <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:background">@null</item>
+        <item name="colorAccent">@color/mint_accent</item>
+        <item name="android:windowBackground">@color/mint_bg</item>
+    </style>
+
+    <!-- Launch: Android 12+ draws the system splash from these; older versions show splash.png. -->
+    <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/mint_bg</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon</item>
+        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
+        <item name="android:background">@drawable/splash</item>
+    </style>
+</resources>

@@ -1,0 +1,82 @@
+apply plugin: 'com.android.application'
+
+// Release signing: bring your own keystore (see README.md, "Signing"). Settings
+// come from android-shell/keystore.properties (gitignored), or from the file named
+// by the MINT_KEYSTORE_PROPERTIES environment variable or Gradle property. Without
+// one the release build is unsigned and Android refuses to install it.
+def keystoreProps = new Properties()
+def keystorePath = System.getenv('MINT_KEYSTORE_PROPERTIES') ?: (project.findProperty('MINT_KEYSTORE_PROPERTIES') ?: null)
+def keystoreFile = keystorePath ? new File(keystorePath) : rootProject.file('../keystore.properties')
+if (keystoreFile.exists()) keystoreFile.withInputStream { keystoreProps.load(it) }
+
+// Hosts the shell trusts, passed by build.sh (-PmintAppHost, -PmintAuthHost). The
+// defaults keep a bare `./gradlew testReleaseUnitTest` compiling. An empty auth
+// host means no login gateway.
+def mintAppHost = project.findProperty('mintAppHost') ?: 'mint.example.com'
+def mintAuthHost = project.hasProperty('mintAuthHost') ? project.property('mintAuthHost') : 'auth.example.com'
+
+android {
+    namespace = "io.github.kd011.mint"
+    compileSdk = rootProject.ext.compileSdkVersion
+    buildFeatures {
+        buildConfig true
+    }
+    defaultConfig {
+        applicationId "io.github.kd011.mint"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 1
+        versionName "1.0.0"
+        buildConfigField "String", "APP_HOST", "\"${mintAppHost}\""
+        buildConfigField "String", "AUTH_HOST", "\"${mintAuthHost}\""
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    signingConfigs {
+        release {
+            if (keystoreProps['storeFile']) {
+                storeFile new File(keystoreFile.parentFile, keystoreProps['storeFile'])
+                storePassword keystoreProps['storePassword']
+                keyAlias keystoreProps['keyAlias']
+                keyPassword keystoreProps['keyPassword']
+            }
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (keystoreProps['storeFile']) signingConfig signingConfigs.release
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
+    }
+    testOptions {
+        unitTests.returnDefaultValues = true
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation "androidx.webkit:webkit:$androidxWebkitVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'

@@ -1,0 +1,9 @@
+.env
+data/
+backups/
+node_modules/
+.shots/
+*.keystore
+keystore.properties
+*.password
+shell.env

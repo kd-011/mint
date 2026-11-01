@@ -1,0 +1,56 @@
+name: Bug report
+description: Something in Mint is wrong or broken
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Never post real financial data.** No real balances, merchants, account numbers, names, API keys or screenshots of your own book. If you need to show a problem, reproduce it in the demo (`node scripts/demo-seed.mjs`) or describe it with invented numbers. Security problems go to a private advisory, not here (see SECURITY.md).
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, what you got.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: With invented data, or in the demo if you can.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Mint version or commit
+      placeholder: v0.1.0
+    validations:
+      required: true
+  - type: input
+    id: node
+    attributes:
+      label: Node version and OS
+      placeholder: Node 22.12, Debian 12
+    validations:
+      required: true
+  - type: dropdown
+    id: how
+    attributes:
+      label: How you run it
+      options: [node server.mjs, systemd, Docker, Other]
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Log lines
+      description: Redact anything that looks like a name, number or key before pasting.
+      render: text
+  - type: checkboxes
+    id: check
+    attributes:
+      label: Before you submit
+      options:
+        - label: This issue contains no real financial data, names or secrets.
+          required: true

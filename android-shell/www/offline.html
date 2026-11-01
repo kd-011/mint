@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>Mint</title>
+<!--
+Shown by the Android app (Capacitor errorPath) only when the Mint server
+can't be loaded at all, e.g. no signal, or the server down. Nothing from the
+bank is stored or shown here. It retries on its own with a growing wait
+(15 s, 30 s, ... 2 min) and at once when the phone gets a connection back.
+-->
+<style>
+  :root { --bg:#0b0d0c; --panel:#161b19; --ink:#eef3f0; --ink-2:#b0bab4; --ink-3:#88938d; --accent:#3ddc97; --accent-ink:#03261a; --ease:cubic-bezier(0.23,1,0.32,1); }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { background: var(--bg); color: var(--ink); font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+  body {
+    min-height: 100dvh; display: grid; place-items: center; text-align: center;
+    padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom));
+    background: radial-gradient(1000px 460px at 50% -160px, rgba(40,170,120,.16), transparent 70%) no-repeat, var(--bg);
+  }
+  main { display: grid; justify-items: center; gap: 20px; max-width: 320px; animation: in 280ms var(--ease) both; }
+  svg { width: 56px; height: 56px; }
+  h1 { font-size: 22px; font-weight: 700; letter-spacing: -.01em; }
+  #detail { color: var(--ink-3); font-size: 13px; overflow-wrap: anywhere; }
+  #detail:empty { display: none; }
+  .btn { min-height: 48px; min-width: 148px; padding: 0 24px; border: 0; border-radius: 24px; font: inherit; font-weight: 700; color: var(--accent-ink); background: var(--accent); display: inline-flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: transform 160ms var(--ease), opacity 160ms; }
+  .btn:active { transform: scale(.97); }
+  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .btn[disabled] { opacity: .6; cursor: default; }
+  .spin { width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(3,38,26,.3); border-top-color: var(--accent-ink); animation: turn .7s linear infinite; }
+  #next { color: var(--ink-3); font-size: 13px; min-height: 1.4em; font-variant-numeric: tabular-nums; }
+  @keyframes turn { to { transform: rotate(360deg); } }
+  @keyframes in { from { opacity: 0; transform: translateY(8px); } }
+  @media (prefers-reduced-motion: reduce) { main { animation: none; } .btn { transition: none; } .spin { animation-duration: 1.6s; } }
+</style>
+</head>
+<body>
+<main>
+  <svg viewBox="0 0 512 512" aria-hidden="true">
+    <rect width="512" height="512" rx="112" fill="#161b19"/>
+    <path d="M256 92c-92 64-132 142-118 218 10 54 52 94 118 110 66-16 108-56 118-110 14-76-26-154-118-218z" fill="#3ddc97"/>
+    <path d="M256 150v262" stroke="#161b19" stroke-width="18" stroke-linecap="round" fill="none"/>
+    <path d="M256 250l-62-48M256 318l70-56" stroke="#161b19" stroke-width="16" stroke-linecap="round" fill="none"/>
+  </svg>
+  <h1>Can't reach Mint</h1>
+  <p id="detail" role="status"></p>
+  <button class="btn" id="retry" type="button">Try again</button>
+  <p id="next" aria-live="polite"></p>
+</main>
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  // build.sh replaces the placeholder in the synced copy with MINT_APP_ORIGIN.
+  const HOME = '__MINT_APP_ORIGIN__';
+  // Any answer at all (even the sign-in page, which a no-cors fetch cannot read)
+  // means the phone reaches the server; only then is it worth leaving this page.
+  // Never on load: a server that answers but breaks would otherwise loop here.
+  let wait = 15;
+  let timer = null;
+  const offlineNote = () => (navigator.onLine === false ? 'This phone has no connection' : '');
+  const retry = async () => {
+    clearInterval(timer);
+    const b = $('retry');
+    b.disabled = true;
+    b.innerHTML = '<span class="spin" aria-hidden="true"></span>Trying';
+    $('next').textContent = '';
+    try {
+      await fetch(HOME + 'manifest.webmanifest', { cache: 'no-store', mode: 'no-cors' });
+      location.replace(HOME);
+      return;
+    } catch (e) {
+      $('detail').textContent = offlineNote() || String((e && e.message) || e);
+    }
+    b.disabled = false;
+    b.textContent = 'Try again';
+    schedule();
+  };
+  const schedule = () => {
+    clearInterval(timer);
+    let left = wait;
+    wait = Math.min(120, wait * 2);
+    $('next').textContent = 'Trying again in ' + left + ' s';
+    timer = setInterval(() => {
+      left--;
+      if (left <= 0) retry(); else $('next').textContent = 'Trying again in ' + left + ' s';
+    }, 1000);
+  };
+  $('retry').onclick = () => { wait = 15; retry(); };
+  addEventListener('online', () => { wait = 15; retry(); });
+  $('detail').textContent = offlineNote();
+  schedule();
+})();
+</script>
+</body>
+</html>

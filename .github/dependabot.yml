@@ -1,0 +1,12 @@
+# The root project has no npm dependencies. Only the optional Android shell and the workflows do.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /android-shell
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

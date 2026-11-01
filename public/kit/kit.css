@@ -1,0 +1,3459 @@
+/*
+  ui-kit: shared design kit. Dense and quiet, one accent, dark by default.
+  Vendored into the app; change it upstream and copy it back in.
+
+  Contents
+    1. Fonts
+    2. Tokens (colour, categorical palette, type, space, radius, shadow, motion)
+    3. Density: dense desktop and phone mode, data-density override
+    4. Theme and motion switching
+    5. Base (scoped to .k-root), bottom clearance
+    6. Shell: app, top bar, tab bar, page, section head, FAB, action bar
+    7. Type helpers, tracked caps
+    8. Surfaces: card, compact card, stat, hero, list, row, entry row,
+       logo slot, swipe row
+    9. Progressive disclosure: disclosure, show more
+   10. Controls: button ranks and groups, icon button, field, input,
+       textarea, select, toggle, segmented, chips, tabs
+   11. Overlays: sheet, dialog, toast, disabled reason
+   12. Feedback: skeleton, spinner, busy, progress, steps, empty, error,
+       offline, success tick
+   13. Badge, pill, tag, dot, category bar, time block, avatar
+   14. Composer
+   15. 404
+   16. Motion keyframes and reduced motion
+
+  Every class is prefixed k-, every token --k-. Components read density role
+  tokens (--k-fs-body, --k-control-h, ...), never the raw type scale, so
+  phone mode is one switch: 16px body, 44px controls as drawn. Dense desktop
+  controls are 36px and carry a transparent ::after to reach 44px.
+*/
+
+/* 1. Fonts ------------------------------------------------------------- */
+
+@font-face {
+  font-family: 'Geist';
+  src: url('./fonts/geist-latin.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('./fonts/geist-mono-latin.woff2') format('woff2');
+  font-weight: 400 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* 2. Tokens ------------------------------------------------------------ */
+/* light-dark(LIGHT, DARK) throughout. */
+
+:root {
+  /* Per-app knobs. Set --k-on-accent to near-black for light accents.
+     --k-hero is the hue of the screen's one hero card (.k-stat-hero): its
+     gradient wash, edge light and caps label. It defaults to the accent, so a
+     hero is never a grey slab. --k-hero-grad replaces the whole wash for an
+     app with its own (Patrol's teal, Mint's green). */
+  --k-accent: #5e5ce6;
+  --k-on-accent: #fff;
+  --k-hero: var(--k-accent);
+
+  /* Neutral ramp, tinted toward the accent (2% light, 3% dark). Steps are
+     about 3% lightness apart (Linear's are 1.5%), so a card visibly lifts off
+     the page on a phone OLED instead of reading as one slab. */
+  --k-bg: light-dark(
+    color-mix(in oklab, var(--k-accent) 2%, #f2f2f4),
+    color-mix(in oklab, var(--k-accent) 3%, #09090b)
+  );
+  --k-bg-raised: light-dark(#fff, color-mix(in oklab, var(--k-accent) 3%, #151518));
+  --k-bg-inset: light-dark(
+    color-mix(in oklab, var(--k-accent) 2%, #e8e8eb),
+    color-mix(in oklab, var(--k-accent) 3%, #050506)
+  );
+  --k-bg-elevated: light-dark(#fff, color-mix(in oklab, var(--k-accent) 3%, #1e1e22));
+  /* Fields: recessed in dark, white in light (a grey field reads as disabled). */
+  --k-bg-field: light-dark(#fff, var(--k-bg-inset));
+  --k-bg-hover: light-dark(rgb(16 16 32 / 0.04), rgb(255 255 255 / 0.04));
+  --k-bg-press: light-dark(rgb(16 16 32 / 0.07), rgb(255 255 255 / 0.07));
+  --k-scrim: light-dark(rgb(16 16 24 / 0.32), rgb(0 0 0 / 0.56));
+
+  --k-line: light-dark(rgb(16 16 32 / 0.09), rgb(255 255 255 / 0.08));
+  --k-line-strong: light-dark(rgb(16 16 32 / 0.15), rgb(255 255 255 / 0.15));
+  --k-line-top: light-dark(rgb(16 16 32 / 0.09), rgb(255 255 255 / 0.12));
+  --k-line-control: light-dark(#84858e, #6c6d77); /* 3:1 on page and raised */
+
+  --k-text: light-dark(#17171c, #ededf0);
+  --k-text-2: light-dark(#4a4b55, #a1a2ab);
+  --k-text-3: light-dark(#64656f, #8b8c96); /* also the placeholder colour */
+
+  /* Accent, derived. -fg is accent used as text or icon on a surface. */
+  --k-accent-fg: light-dark(
+    color-mix(in oklab, var(--k-accent) 84%, #000),
+    color-mix(in oklab, var(--k-accent) 58%, #fff)
+  );
+  --k-accent-hover: color-mix(in oklab, var(--k-accent) 88%, light-dark(#000, #fff));
+  --k-accent-soft: light-dark(
+    color-mix(in oklab, var(--k-accent) 10%, transparent),
+    color-mix(in oklab, var(--k-accent) 13%, transparent)
+  );
+  --k-accent-line: color-mix(in oklab, var(--k-accent) 55%, transparent);
+  --k-focus: var(--k-accent-fg);
+  /* Hero, derived (section 8 re-derives these on .k-stat-hero so a tone or a
+     local --k-hero carries through). -fg is the hero hue as readable text,
+     -tint and -tint-2 are the two solid ends of its wash. */
+  --k-hero-fg: light-dark(
+    color-mix(in oklab, var(--k-hero) 72%, #000),
+    color-mix(in oklab, var(--k-hero) 58%, #fff)
+  );
+  --k-hero-tint: light-dark(
+    color-mix(in oklab, var(--k-hero) 20%, #fff),
+    color-mix(in oklab, var(--k-hero) 46%, #0e0f12)
+  );
+  --k-hero-tint-2: light-dark(
+    color-mix(in oklab, var(--k-hero) 6%, #fff),
+    color-mix(in oklab, var(--k-hero) 17%, #0e0f12)
+  );
+  --k-hero-soft: light-dark(
+    color-mix(in oklab, var(--k-hero) 7%, transparent),
+    color-mix(in oklab, var(--k-hero) 9%, transparent)
+  );
+
+  /* Categorical palette: six hues for colour-coding (accounts, calendars,
+     time blocks, category bars). Meaning comes from the app's legend, never
+     from state, so ok, warn and danger stay separate. Each passes 4.5:1 as
+     text on its own -soft tint and on raised surfaces, in both themes. The
+     @supports block below rotates them around the accent so they sit with it. */
+  --k-cat-1: light-dark(#1d6fb8, #6cb4f5);
+  --k-cat-2: light-dark(#127a5f, #4fd1a5);
+  --k-cat-3: light-dark(#8a5a00, #f2b75b);
+  --k-cat-4: light-dark(#b23a6b, #f68fbb);
+  --k-cat-5: light-dark(#6f4cc4, #b49cf7);
+  --k-cat-6: light-dark(#b0461c, #f79a6c);
+
+  /* Semantic: state only, never decoration. A hero number may carry its
+     app's colour through --k-hero; that is the one exception. */
+  --k-ok: light-dark(#18794e, #3dd68c);
+  --k-warn: light-dark(#8f5400, #f0b44c);
+  --k-danger: light-dark(#c42a30, #ff6369);
+  --k-ok-soft: light-dark(
+    color-mix(in oklab, var(--k-ok) 10%, transparent),
+    color-mix(in oklab, var(--k-ok) 13%, transparent)
+  );
+  --k-warn-soft: light-dark(
+    color-mix(in oklab, var(--k-warn) 10%, transparent),
+    color-mix(in oklab, var(--k-warn) 14%, transparent)
+  );
+  --k-danger-soft: light-dark(
+    color-mix(in oklab, var(--k-danger) 9%, transparent),
+    color-mix(in oklab, var(--k-danger) 13%, transparent)
+  );
+  --k-danger-bg: light-dark(#cd2b31, #cf2f37);
+  --k-danger-hover: light-dark(#b5242a, #db3c44);
+  --k-on-danger: #fff;
+
+  /* Type */
+  --k-font: 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --k-font-mono: 'Geist Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --k-fs-11: 0.6875rem;
+  --k-fs-12: 0.75rem;
+  --k-fs-13: 0.8125rem;
+  --k-fs-14: 0.875rem;
+  --k-fs-15: 0.9375rem;
+  --k-fs-17: 1.0625rem;
+  --k-fs-20: 1.25rem;
+  --k-fs-26: 1.625rem;
+  --k-fs-36: 2.25rem;
+  --k-lh: 1.45;
+  --k-lh-tight: 1.2;
+  --k-track-tight: -0.014em; /* 17px and up */
+  --k-track-display: -0.022em; /* 26px and up */
+
+  /* Space: 4px scale, nothing off it. */
+  --k-space-1: 4px;
+  --k-space-2: 8px;
+  --k-space-3: 12px;
+  --k-space-4: 16px;
+  --k-space-5: 24px;
+  --k-space-6: 32px;
+
+  /* Radius */
+  --k-radius-tag: 4px;
+  --k-radius-chip: 6px;
+  --k-radius-sheet: 20px;
+  --k-radius-pill: 999px;
+
+  /* Buttons, icon buttons, segmented tracks and chips are always round ends
+     (Owner: "I dont like square buttons"). Fields keep --k-radius-control. */
+  --k-radius-btn: var(--k-radius-pill);
+
+  --k-hit: 44px;
+
+  /* Sticky chrome heights, safe areas included; focus and anchors clear them. */
+  --k-topbar-h: calc(var(--k-topbar-row) + env(safe-area-inset-top));
+  --k-tabbar-h: calc(var(--k-tabbar-row) + env(safe-area-inset-bottom));
+  /* What scrolling content must clear at the bottom of the viewport: the tab
+     bar, plus the floating action button or action bar when the page has one
+     (section 5, :has(.k-fab) raises it). Use it as bottom padding on any scroller whose
+     bottom chrome is position: fixed. */
+  --k-fab-size: 56px;
+  --k-fab-clear: 0px;
+  --k-actionbar-clear: 0px;
+  --k-bottom-clear: calc(var(--k-tabbar-h) + var(--k-fab-clear) + var(--k-actionbar-clear) + var(--k-space-4));
+
+  /* Shadows: offset and soft blur, negative spread, never a hard offset. */
+  --k-shadow-1:
+    0 1px 2px light-dark(rgb(16 16 40 / 0.05), rgb(0 0 0 / 0.36)),
+    0 2px 2px light-dark(rgb(16 16 40 / 0.03), rgb(0 0 0 / 0.2)),
+    0 8px 16px -4px light-dark(rgb(16 16 40 / 0.06), rgb(0 0 0 / 0.5));
+  --k-shadow-2:
+    0 2px 4px light-dark(rgb(16 16 40 / 0.05), rgb(0 0 0 / 0.3)),
+    0 16px 40px -16px light-dark(rgb(16 16 40 / 0.18), rgb(0 0 0 / 0.8));
+  --k-shadow-3:
+    0 0 0 1px var(--k-line),
+    0 4px 8px light-dark(rgb(16 16 40 / 0.05), rgb(0 0 0 / 0.3)),
+    0 24px 64px -24px light-dark(rgb(16 16 40 / 0.28), rgb(0 0 0 / 0.9));
+  /* Inner top highlight on raised surfaces: light catching the lip. White on
+     white in light theme, so it vanishes there and only the shadow lifts. */
+  --k-edge: inset 0 1px 0 light-dark(rgb(255 255 255 / 0.9), rgb(255 255 255 / 0.06));
+  --k-wash: linear-gradient(180deg, light-dark(rgb(255 255 255 / 0), rgb(255 255 255 / 0.022)), transparent 44%);
+
+  /* Motion. Durations are ceilings: entrances stay under 400ms. */
+  --k-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --k-ease-inout: cubic-bezier(0.77, 0, 0.175, 1);
+  --k-ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --k-dur-press: 120ms;
+  --k-dur-1: 160ms; /* responses: hover, colour, toggle fill */
+  --k-dur-2: 220ms; /* popovers, rows, dialogs */
+  --k-dur-3: 320ms; /* sheets, heroes */
+  /* Spring stiffness 400, damping 30 (about 3% overshoot), for small controls.
+     Generated by spring() in kit.js; regenerate there if you change it. */
+  --k-spring-snappy: linear(
+    0, 0.043, 0.145, 0.276, 0.415, 0.548, 0.666, 0.766, 0.847, 0.909, 0.955, 0.987, 1.008,
+    1.021, 1.027, 1.028, 1.027, 1.024, 1.021, 1.017, 1.013, 1.009, 1.007, 1.004, 1
+  );
+  --k-spring-snappy-dur: 380ms;
+  /* 1 normally, 0 under reduced motion: multiply every distance by it. */
+  --k-move: 1;
+}
+
+/* Categorical hues rotated around the accent in oklch, fixed lightness and
+   chroma so contrast holds whatever the accent is. Spaced 60 degrees apart,
+   starting 30 degrees off the accent so no category reads as the accent. */
+@supports (color: oklch(from red l c h)) {
+  /* Accent as text: the mix above, with its lightness clamped so even a pale
+     accent (cyan, lime, amber) stays 4.5:1 on every surface in both themes. */
+  :root {
+    --k-accent-fg: light-dark(
+      oklch(from color-mix(in oklab, var(--k-accent) 84%, #000) min(l, 0.5) c h),
+      oklch(from color-mix(in oklab, var(--k-accent) 58%, #fff) max(l, 0.76) c h)
+    );
+    --k-cat-1: light-dark(oklch(from var(--k-accent) 0.48 0.12 calc(h + 30)), oklch(from var(--k-accent) 0.79 0.12 calc(h + 30)));
+    --k-cat-2: light-dark(oklch(from var(--k-accent) 0.48 0.12 calc(h + 90)), oklch(from var(--k-accent) 0.79 0.12 calc(h + 90)));
+    --k-cat-3: light-dark(oklch(from var(--k-accent) 0.48 0.12 calc(h + 150)), oklch(from var(--k-accent) 0.79 0.12 calc(h + 150)));
+    --k-cat-4: light-dark(oklch(from var(--k-accent) 0.48 0.12 calc(h + 210)), oklch(from var(--k-accent) 0.79 0.12 calc(h + 210)));
+    --k-cat-5: light-dark(oklch(from var(--k-accent) 0.48 0.12 calc(h + 270)), oklch(from var(--k-accent) 0.79 0.12 calc(h + 270)));
+    --k-cat-6: light-dark(oklch(from var(--k-accent) 0.48 0.12 calc(h + 330)), oklch(from var(--k-accent) 0.79 0.12 calc(h + 330)));
+  }
+}
+/* data-cat="1..6" on any element sets --k-c and --k-c-soft for it and its
+   children: .k-dot, .k-cat, .k-tag, .k-avatar, .k-logo, .k-block read them. */
+[data-cat] {
+  --k-c-soft: light-dark(
+    color-mix(in oklab, var(--k-c) 12%, transparent),
+    color-mix(in oklab, var(--k-c) 17%, transparent)
+  );
+}
+[data-cat='1'] {
+  --k-c: var(--k-cat-1);
+}
+[data-cat='2'] {
+  --k-c: var(--k-cat-2);
+}
+[data-cat='3'] {
+  --k-c: var(--k-cat-3);
+}
+[data-cat='4'] {
+  --k-c: var(--k-cat-4);
+}
+[data-cat='5'] {
+  --k-c: var(--k-cat-5);
+}
+[data-cat='6'] {
+  --k-c: var(--k-cat-6);
+}
+
+/* 3. Density ----------------------------------------------------------- */
+/* Phone mode switches on by itself for a coarse pointer or a viewport under
+   700px. data-density="desktop" on k-root keeps the dense numbers anyway (admin
+   screens); data-density="phone" forces phone mode
+   (a phone-first app shown on a desktop). Either works on a subtree too.
+   Phone numbers: body 16, secondary 14, meta 13, nothing readable under 12,
+   row titles 17 at 600, every control 44px tall as drawn, inputs 16px so iOS
+   never zooms. */
+
+/* Density roles. Components read these, never the raw scale, so one switch
+   moves the whole kit between dense desktop and phone. Dense first. */
+:root,
+[data-density='desktop'] {
+  --k-fs-body: var(--k-fs-14);
+  --k-fs-secondary: var(--k-fs-13); /* row meta, labels, stat labels */
+  --k-fs-meta: var(--k-fs-12); /* timestamps, error detail, the smallest line */
+  --k-fs-micro: var(--k-fs-11); /* count badges and tracked caps only */
+  --k-fs-row-title: var(--k-fs-15);
+  --k-fw-row-title: 500;
+  --k-fs-card-title: var(--k-fs-15);
+  --k-fs-control: var(--k-fs-14);
+  --k-fs-input: var(--k-fs-14);
+  --k-fs-stat: var(--k-fs-26);
+  --k-fs-hero: var(--k-fs-36);
+  --k-fs-topbar: var(--k-fs-17);
+  --k-lh-body: var(--k-lh);
+  --k-control-h: 36px;
+  --k-control-h-sm: 30px;
+  --k-control-h-lg: 44px;
+  --k-row-h: 52px;
+  --k-row-h-compact: 40px;
+  --k-lead: 32px;
+  --k-gap-actions: var(--k-space-2);
+  --k-row-ws: nowrap; /* row titles and meta: one line dense, wrap on phones */
+  --k-radius-control: 10px; /* fields, rows, inputs */
+  --k-radius-card: 14px;
+  --k-toggle-w: 38px;
+  --k-toggle-h: 22px;
+  --k-topbar-row: 52px;
+  --k-tabbar-row: 56px;
+}
+
+@media (pointer: coarse), (max-width: 699.98px) {
+  :root:not([data-density='desktop']) {
+    --k-fs-body: 1rem;
+    --k-fs-secondary: 0.875rem;
+    --k-fs-meta: 0.8125rem;
+    --k-fs-micro: 0.75rem;
+    --k-fs-row-title: 1.0625rem;
+    --k-fw-row-title: 600;
+    --k-fs-card-title: 1.0625rem;
+    --k-fs-control: 1rem;
+    --k-fs-input: 1rem;
+    --k-fs-stat: 1.75rem;
+    --k-fs-hero: 2.5rem;
+    --k-fs-topbar: 1.375rem;
+    --k-lh-body: 1.5;
+    --k-control-h: 44px;
+    --k-control-h-sm: 44px;
+    --k-control-h-lg: 52px;
+    --k-row-h: 56px;
+    --k-row-h-compact: 48px;
+    --k-lead: 40px;
+    --k-radius-control: 12px;
+    --k-radius-card: 18px;
+    --k-gap-actions: var(--k-space-3);
+    --k-row-ws: normal;
+    --k-toggle-w: 48px;
+    --k-toggle-h: 28px;
+    --k-topbar-row: 56px;
+    --k-tabbar-row: 64px;
+  }
+}
+[data-density='phone'] {
+  --k-fs-body: 1rem;
+  --k-fs-secondary: 0.875rem;
+  --k-fs-meta: 0.8125rem;
+  --k-fs-micro: 0.75rem;
+  --k-fs-row-title: 1.0625rem;
+  --k-fw-row-title: 600;
+  --k-fs-card-title: 1.0625rem;
+  --k-fs-control: 1rem;
+  --k-fs-input: 1rem;
+  --k-fs-stat: 1.75rem;
+  --k-fs-hero: 2.5rem;
+  --k-fs-topbar: 1.375rem;
+  --k-lh-body: 1.5;
+  --k-control-h: 44px;
+  --k-control-h-sm: 44px;
+  --k-control-h-lg: 52px;
+  --k-row-h: 56px;
+  --k-row-h-compact: 48px;
+  --k-lead: 40px;
+  --k-radius-control: 12px;
+  --k-radius-card: 18px;
+  --k-gap-actions: var(--k-space-3);
+  --k-row-ws: normal;
+  --k-toggle-w: 48px;
+  --k-toggle-h: 28px;
+  --k-topbar-row: 56px;
+  --k-tabbar-row: 64px;
+}
+
+/* 4. Theme and motion switching --------------------------------------------------- */
+/* Dark unless the OS asks for light and nothing pinned dark. Any element can
+   pin a theme with data-theme; tokens resolve per element. */
+
+:root {
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    color-scheme: light;
+  }
+}
+[data-theme='light'] {
+  color-scheme: light;
+}
+[data-theme='dark'] {
+  color-scheme: dark;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --k-move: 0;
+  }
+}
+[data-motion='reduce'] {
+  --k-move: 0;
+}
+
+/* 5. Base -------------------------------------------------------------- */
+/* Put k-root on <html>. Zero specificity so app styles still win while an app
+   migrates onto the kit. */
+
+:where(.k-root) {
+  background: var(--k-bg);
+  color: var(--k-text);
+  font-family: var(--k-font);
+  font-size: var(--k-fs-body);
+  line-height: var(--k-lh-body);
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  accent-color: var(--k-accent);
+  caret-color: var(--k-accent-fg);
+  scrollbar-color: var(--k-line-strong) transparent;
+  scrollbar-width: thin;
+  /* Anchors and focused fields land clear of the sticky top bar and tab bar. */
+  scroll-padding-top: calc(var(--k-topbar-h) + 44px);
+  scroll-padding-bottom: var(--k-bottom-clear);
+}
+/* A floating action button or a sticky action bar raises the bottom clearance,
+   so the last row of a list scrolls clear of them. */
+:root:has(.k-fab:not([hidden])) {
+  --k-fab-clear: calc(var(--k-fab-size) + var(--k-space-3));
+}
+:root:has(.k-actionbar:not([hidden])) {
+  --k-actionbar-clear: calc(var(--k-control-h-lg) + var(--k-space-5));
+}
+/* The offline banner rides inside the top bar, so the bar gets taller. */
+:root:has(.k-topbar .k-offline:not([hidden])) {
+  --k-topbar-h: calc(var(--k-topbar-row) + 36px + env(safe-area-inset-top));
+}
+@media (min-width: 1024px) {
+  :root {
+    --k-tabbar-h: 0px;
+  }
+}
+@media (pointer: fine) {
+  :where(.k-root) {
+    overscroll-behavior: none;
+  }
+}
+:where(.k-root) :is(a, button, label, input, select, textarea, summary) {
+  touch-action: manipulation;
+}
+[data-k-dragging],
+[data-k-dragging] * {
+  user-select: none;
+  -webkit-user-select: none;
+}
+:where(.k-root) body {
+  margin: 0;
+  background: var(--k-bg);
+}
+:where(.k-root) *,
+:where(.k-root) *::before,
+:where(.k-root) *::after {
+  box-sizing: border-box;
+}
+:where(.k-root) ::selection {
+  background: color-mix(in oklab, var(--k-accent) 38%, transparent);
+  color: var(--k-text);
+}
+:where(.k-root) :focus-visible {
+  outline: 2px solid var(--k-focus);
+  outline-offset: 2px;
+}
+:where(.k-root) :focus:not(:focus-visible) {
+  outline: none;
+}
+:where(.k-root) a {
+  color: var(--k-accent-fg);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+:where(.k-root) h1,
+:where(.k-root) h2,
+:where(.k-root) h3 {
+  margin: 0;
+  text-wrap: balance;
+}
+:where(.k-root) p {
+  margin: 0;
+  text-wrap: pretty;
+}
+:where(.k-root) button,
+:where(.k-root) input,
+:where(.k-root) select,
+:where(.k-root) textarea {
+  font: inherit;
+  color: inherit;
+}
+:where(.k-root) code,
+:where(.k-root) kbd,
+:where(.k-root) samp {
+  font-family: var(--k-font-mono);
+  font-size: 0.92em;
+}
+:where(.k-root) svg {
+  flex: none;
+}
+
+.k-icon {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex: none;
+}
+.k-icon-sm {
+  width: 16px;
+  height: 16px;
+}
+.k-icon-lg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Skip link: first thing in <body>, visible only when focused. */
+.k-skip {
+  position: fixed;
+  z-index: 100;
+  top: 8px;
+  left: 8px;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--k-hit);
+  padding: 0 14px;
+  border-radius: var(--k-radius-control);
+  background: var(--k-bg-elevated);
+  box-shadow: var(--k-shadow-3);
+  color: var(--k-text);
+  font-weight: 500;
+  text-decoration: none;
+  transform: translateY(-160%);
+}
+.k-skip:focus-visible {
+  transform: none;
+}
+.k-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* 6. Shell ------------------------------------------------------------- */
+/* .k-app holds .k-topbar, .k-main and .k-tabbar. On phones the tab bar sits at
+   the bottom; from 1024px it becomes a left rail. */
+
+.k-app {
+  min-height: 100dvh;
+  display: grid;
+  grid-template:
+    'top' auto
+    'main' 1fr
+    'tabs' auto
+    / minmax(0, 1fr);
+}
+.k-topbar {
+  grid-area: top;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--k-space-2);
+  min-height: var(--k-topbar-row);
+  padding: env(safe-area-inset-top) max(var(--k-space-2), env(safe-area-inset-right)) 0 max(var(--k-space-4), env(safe-area-inset-left));
+  background: var(--k-bg);
+  box-shadow: 0 1px 0 transparent;
+  transition: box-shadow var(--k-dur-1) ease;
+}
+.k-topbar[data-scrolled] {
+  box-shadow: 0 1px 0 var(--k-line);
+}
+.k-topbar-title {
+  flex: 1;
+  min-width: 0;
+  /* Holds the first line at the bar height when the offline banner wraps below it. */
+  min-height: var(--k-topbar-row);
+  line-height: var(--k-topbar-row);
+  font-size: var(--k-fs-topbar);
+  font-weight: 650;
+  letter-spacing: var(--k-track-tight);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Controls sit above the offline banner so their 44px hit areas reach into it. */
+.k-topbar > :not(.k-offline) {
+  position: relative;
+  z-index: 1;
+}
+.k-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-1);
+}
+/* A quiet value on the right of the bar (Patrol's odometer): not a button. */
+.k-topbar-meta {
+  padding-right: var(--k-space-2);
+  color: var(--k-text-2);
+  font-size: var(--k-fs-secondary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.k-main {
+  grid-area: main;
+  min-width: 0;
+}
+.k-page {
+  width: 100%;
+  max-width: 880px;
+  margin-inline: auto;
+  padding: var(--k-space-4) max(var(--k-space-4), env(safe-area-inset-right)) calc(var(--k-space-6) + var(--k-fab-clear))
+    max(var(--k-space-4), env(safe-area-inset-left));
+}
+.k-page-wide {
+  max-width: 1200px;
+}
+.k-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--k-space-3);
+}
+.k-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--k-space-3);
+}
+.k-section + .k-section {
+  margin-top: var(--k-space-5);
+}
+.k-grid {
+  display: grid;
+  gap: var(--k-space-3);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
+}
+
+.k-tabbar {
+  grid-area: tabs;
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  justify-content: space-around;
+  padding: 0 max(var(--k-space-1), env(safe-area-inset-right)) env(safe-area-inset-bottom) max(var(--k-space-1), env(safe-area-inset-left));
+  background: var(--k-bg);
+  box-shadow: 0 -1px 0 var(--k-line);
+}
+/* Five items fit at 360px: each takes an equal share and its label can
+   shrink to an ellipsis rather than push the bar wider. */
+.k-tab-item {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 112px;
+  min-height: var(--k-tabbar-row);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: var(--k-text-2);
+  font-size: var(--k-fs-12);
+  font-weight: 500;
+  line-height: 1.2;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    color var(--k-dur-1) ease,
+    transform var(--k-dur-press) var(--k-ease-out);
+}
+.k-tab-item > :not(.k-icon, .k-badge) {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.k-tab-item .k-icon {
+  width: 22px;
+  height: 22px;
+}
+/* The current item: accent label and icon on a soft pill behind the icon. */
+.k-tab-item::before {
+  content: '';
+  position: absolute;
+  top: calc(50% - 25px);
+  left: 50%;
+  width: 56px;
+  height: 30px;
+  margin-left: -28px;
+  border-radius: var(--k-radius-pill);
+  background: var(--k-accent-soft);
+  opacity: 0;
+  transform: scaleX(calc(1 - 0.4 * var(--k-move)));
+  transition:
+    opacity var(--k-dur-1) ease,
+    transform var(--k-dur-2) var(--k-ease-out);
+}
+.k-tab-item[aria-current='page'] {
+  color: var(--k-accent-fg);
+  font-weight: 600;
+}
+.k-tab-item[aria-current='page']::before {
+  opacity: 1;
+  transform: none;
+}
+.k-tab-item > * {
+  position: relative;
+}
+.k-tab-item:active {
+  transform: scale(calc(1 - 0.06 * var(--k-move)));
+}
+.k-tab-item .k-badge {
+  position: absolute;
+  top: calc(50% - 26px);
+  left: calc(50% + 8px);
+}
+
+@media (min-width: 1024px) {
+  .k-app {
+    grid-template:
+      'tabs top' auto
+      'tabs main' 1fr
+      / 232px minmax(0, 1fr);
+  }
+  .k-tabbar {
+    position: sticky;
+    top: 0;
+    height: 100dvh;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 2px;
+    padding: var(--k-space-4) var(--k-space-3);
+    background: var(--k-bg-inset);
+    box-shadow: 1px 0 0 var(--k-line);
+  }
+  .k-tabbar-brand {
+    display: flex;
+    align-items: center;
+    gap: var(--k-space-2);
+    min-height: 36px;
+    padding: 0 var(--k-space-2);
+    margin-bottom: var(--k-space-3);
+    font-size: var(--k-fs-15);
+    font-weight: 600;
+  }
+  .k-tab-item {
+    flex: none;
+    max-width: none;
+    min-height: var(--k-control-h);
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 0 var(--k-space-2);
+    border-radius: var(--k-radius-control);
+    font-size: var(--k-fs-control);
+    color: var(--k-text-2);
+  }
+  .k-tab-item::before {
+    display: none;
+  }
+  .k-tab-item::after {
+    content: '';
+    position: absolute;
+    inset: -4px 0;
+  }
+  .k-tab-item .k-icon {
+    width: 18px;
+    height: 18px;
+  }
+  .k-tab-item:not([aria-current='page']):hover {
+    background: var(--k-bg-hover);
+    color: var(--k-text);
+  }
+  .k-tab-item[aria-current='page'] {
+    background: var(--k-accent-soft);
+  }
+  .k-tab-item .k-badge {
+    position: static;
+    margin-left: auto;
+  }
+  .k-page {
+    padding: var(--k-space-5) var(--k-space-6) var(--k-space-6);
+  }
+}
+@media (max-width: 1023.98px) {
+  .k-tabbar-brand {
+    display: none;
+  }
+}
+
+/* Sticky section header inside a scrolling list. */
+.k-section-head {
+  position: sticky;
+  top: var(--k-topbar-h);
+  z-index: 5;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--k-space-3);
+  padding: var(--k-space-2) var(--k-space-1);
+  background: var(--k-bg);
+  color: var(--k-text-2);
+  font-size: var(--k-fs-secondary);
+  font-weight: 500;
+}
+/* Name the group, never the view: "Fitted (2)", "Cards", not "Latest" over
+   the latest list. Takes .k-caps for Mint's tracked label. */
+.k-section-head > :first-child {
+  min-width: 0;
+}
+
+/* Floating action button: the screen's one primary action, in the thumb zone
+   above the tab bar (and above an action bar if there is one). */
+.k-fab {
+  position: fixed;
+  z-index: 25;
+  right: max(var(--k-space-4), env(safe-area-inset-right));
+  bottom: calc(var(--k-tabbar-h) + var(--k-actionbar-clear) + var(--k-space-4));
+  display: inline-grid;
+  place-items: center;
+  width: var(--k-fab-size);
+  height: var(--k-fab-size);
+  padding: 0;
+  border: 0;
+  border-radius: 18px;
+  background: var(--k-accent);
+  color: var(--k-on-accent);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.2),
+    0 2px 4px light-dark(rgb(16 16 40 / 0.14), rgb(0 0 0 / 0.4)),
+    0 12px 28px -8px light-dark(rgb(16 16 40 / 0.3), rgb(0 0 0 / 0.7));
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    background-color var(--k-dur-1) ease,
+    transform var(--k-dur-press) var(--k-ease-out);
+}
+.k-fab .k-icon {
+  width: 24px;
+  height: 24px;
+}
+.k-fab:active {
+  transform: scale(calc(1 - 0.06 * var(--k-move)));
+}
+@media (hover: hover) and (pointer: fine) {
+  .k-fab:hover {
+    background: var(--k-accent-hover);
+  }
+}
+
+/* Action bar: the screen's primary actions pinned in the thumb zone, just above
+   the tab bar. Sticky, so it takes its own space at the end of the page and
+   never covers the last row. Put a .k-actions or one .k-btn inside. */
+.k-actionbar {
+  position: sticky;
+  z-index: 15;
+  bottom: var(--k-tabbar-h);
+  margin: var(--k-space-4) calc(-1 * var(--k-space-4)) 0;
+  padding: var(--k-space-3) var(--k-space-4);
+  background: linear-gradient(to top, var(--k-bg) 70%, color-mix(in oklab, var(--k-bg) 0%, transparent));
+}
+.k-actionbar[hidden] {
+  display: none;
+}
+@media (min-width: 1024px) {
+  .k-actionbar {
+    bottom: 0;
+  }
+}
+
+/* 7. Type helpers ------------------------------------------------------ */
+
+.k-h1 {
+  font-size: var(--k-fs-26);
+  font-weight: 600;
+  line-height: var(--k-lh-tight);
+  letter-spacing: var(--k-track-display);
+}
+.k-h2 {
+  font-size: var(--k-fs-20);
+  font-weight: 600;
+  line-height: var(--k-lh-tight);
+  letter-spacing: var(--k-track-tight);
+}
+.k-title {
+  font-size: var(--k-fs-17);
+  font-weight: 600;
+  line-height: var(--k-lh-tight);
+  letter-spacing: var(--k-track-tight);
+}
+.k-body {
+  font-size: var(--k-fs-body);
+  line-height: var(--k-lh-body);
+  max-width: 70ch;
+}
+.k-meta {
+  font-size: var(--k-fs-secondary);
+  color: var(--k-text-2);
+}
+/* Tracked caps micro label, inside a card or above a group of rows ("NET
+   WORTH", "CASH"). Mint's look, which the owner kept. Never an eyebrow above a
+   heading. 12px on phones, 11px dense. */
+.k-caps {
+  font-size: max(var(--k-fs-micro), 0.6875rem);
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--k-text-2);
+}
+.k-faint {
+  color: var(--k-text-3);
+}
+.k-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+.k-mono {
+  font-family: var(--k-font-mono);
+  font-size: 0.92em;
+}
+
+/* 8. Surfaces ---------------------------------------------------------- */
+
+.k-card {
+  position: relative;
+  background: var(--k-wash), var(--k-bg-raised);
+  border: 1px solid var(--k-line);
+  border-top-color: var(--k-line-top);
+  border-radius: var(--k-radius-card);
+  box-shadow: var(--k-edge), var(--k-shadow-1);
+  padding: var(--k-space-4);
+  min-width: 0;
+}
+.k-card-dense,
+.k-card-compact {
+  padding: var(--k-space-3);
+}
+/* Compact card: a tile that shows the gist (a day, a goal, a flight) and
+   opens or expands for the rest. Title and one meta line, no body copy. */
+.k-card.k-card-compact {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-3);
+  min-height: var(--k-row-h);
+}
+.k-card-compact > .k-row-body {
+  flex: 1;
+}
+.k-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--k-space-3);
+  margin-bottom: var(--k-space-3);
+}
+.k-card-title {
+  font-size: var(--k-fs-card-title);
+  font-weight: 600;
+  line-height: var(--k-lh-tight);
+}
+a.k-card,
+button.k-card {
+  display: block;
+  width: 100%;
+  text-align: left;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  font: inherit;
+  transition:
+    border-color var(--k-dur-1) ease,
+    transform var(--k-dur-press) var(--k-ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  a.k-card:hover,
+  button.k-card:hover {
+    border-color: var(--k-line-strong);
+  }
+}
+a.k-card:active,
+button.k-card:active {
+  transform: scale(calc(1 - 0.015 * var(--k-move)));
+}
+
+/* Stat card: one primary number, a label, at most one supporting line. */
+.k-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.k-stat-label {
+  font-size: var(--k-fs-secondary);
+  color: var(--k-text-2);
+}
+.k-stat-value {
+  font-size: var(--k-fs-stat);
+  font-weight: 600;
+  line-height: var(--k-lh-tight);
+  letter-spacing: var(--k-track-display);
+  font-variant-numeric: tabular-nums;
+}
+.k-stat-value small {
+  font-size: var(--k-fs-15);
+  font-weight: 500;
+  color: var(--k-text-2);
+  letter-spacing: 0;
+}
+.k-stat-delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--k-fs-secondary);
+  color: var(--k-text-2);
+  font-variant-numeric: tabular-nums;
+}
+.k-stat-delta[data-tone='ok'] {
+  color: var(--k-ok);
+}
+.k-stat-delta[data-tone='danger'] {
+  color: var(--k-danger);
+}
+.k-stat-delta[data-tone='warn'] {
+  color: var(--k-warn);
+}
+/* A plain stat number can take a tone too (a balance that went negative). */
+.k-stat-value[data-tone='ok'] {
+  color: var(--k-ok);
+}
+.k-stat-value[data-tone='warn'] {
+  color: var(--k-warn);
+}
+.k-stat-value[data-tone='danger'] {
+  color: var(--k-danger);
+}
+
+/* Hero stat: the screen's one focal card, on .k-card.k-stat. A wash of the
+   hero hue (--k-hero, the accent by default) from a lit top-left corner, an
+   edge of light along the lip, a hue-tinted rim and the number large in the
+   text colour. Never a grey slab. data-tone on the card swaps the hue for a
+   state: net worth green when up, red when under water. --k-hero-grad
+   replaces the wash outright for an app with its own gradient.
+     .k-caps (or .k-stat-label) label, .k-stat-value, then optional
+     .k-stat-delta, a status line, and a .k-stat-split of supporting figures. */
+.k-stat-hero {
+  --k-hero-fg: light-dark(
+    color-mix(in oklab, var(--k-hero) 72%, #000),
+    color-mix(in oklab, var(--k-hero) 58%, #fff)
+  );
+  --k-hero-tint: light-dark(
+    color-mix(in oklab, var(--k-hero) 20%, #fff),
+    color-mix(in oklab, var(--k-hero) 46%, #0e0f12)
+  );
+  --k-hero-tint-2: light-dark(
+    color-mix(in oklab, var(--k-hero) 6%, #fff),
+    color-mix(in oklab, var(--k-hero) 17%, #0e0f12)
+  );
+  --k-hero-soft: light-dark(
+    color-mix(in oklab, var(--k-hero) 7%, transparent),
+    color-mix(in oklab, var(--k-hero) 9%, transparent)
+  );
+  /* Text inside the wash: secondary lines lean toward the hue and stay light
+     enough for 4.5:1 on its brightest stop; warn follows. */
+  --k-text-2: light-dark(color-mix(in oklab, #17171c 74%, var(--k-hero)), color-mix(in oklab, #fff 78%, var(--k-hero)));
+  --k-warn: light-dark(#7a4700, #ffd98a);
+  /* Light from the top-left corner: white in light theme, the hue in dark. */
+  --k-hero-glow: light-dark(rgb(255 255 255 / 0.55), color-mix(in oklab, var(--k-hero) 16%, transparent));
+  gap: var(--k-space-2);
+  padding: var(--k-space-5);
+  background:
+    radial-gradient(110% 80% at 0% 0%, var(--k-hero-glow), transparent 65%),
+    var(--k-hero-grad, linear-gradient(150deg, var(--k-hero-tint) 0%, var(--k-hero-tint-2) 100%));
+  border-color: color-mix(in oklab, var(--k-hero) 26%, transparent);
+  border-top-color: color-mix(in oklab, var(--k-hero) 40%, light-dark(transparent, rgb(255 255 255 / 0.5)));
+  box-shadow:
+    inset 0 1px 0 light-dark(rgb(255 255 255 / 0.9), rgb(255 255 255 / 0.1)),
+    0 1px 2px light-dark(rgb(16 16 40 / 0.05), rgb(0 0 0 / 0.36)),
+    0 18px 40px -18px light-dark(color-mix(in oklab, var(--k-hero) 40%, transparent), rgb(0 0 0 / 0.75));
+  overflow: hidden;
+}
+@supports (color: oklch(from red l c h)) {
+  :root,
+  .k-stat-hero {
+    --k-hero-fg: light-dark(
+      oklch(from color-mix(in oklab, var(--k-hero) 72%, #000) min(l, 0.47) c h),
+      oklch(from color-mix(in oklab, var(--k-hero) 58%, #fff) max(l, 0.87) c h)
+    );
+  }
+  /* The wash keeps its hue but never gets light enough (dark) or dark enough
+     (light) to cost the text on it its contrast, whatever hue the app picks. */
+  .k-stat-hero {
+    --k-hero-tint: light-dark(
+      oklch(from color-mix(in oklab, var(--k-hero) 20%, #fff) max(l, 0.92) c h),
+      oklch(from color-mix(in oklab, var(--k-hero) 46%, #0e0f12) min(l, 0.4) c h)
+    );
+    --k-hero-tint-2: light-dark(
+      oklch(from color-mix(in oklab, var(--k-hero) 6%, #fff) max(l, 0.96) c h),
+      oklch(from color-mix(in oklab, var(--k-hero) 17%, #0e0f12) min(l, 0.27) c h)
+    );
+  }
+}
+.k-stat-hero[data-tone='ok'] {
+  --k-hero: var(--k-ok);
+}
+.k-stat-hero[data-tone='warn'] {
+  --k-hero: var(--k-warn);
+}
+.k-stat-hero[data-tone='danger'] {
+  --k-hero: var(--k-danger);
+}
+.k-stat-hero :is(.k-caps, .k-stat-label) {
+  color: var(--k-hero-fg);
+}
+.k-stat-hero .k-stat-label:not(.k-caps) {
+  font-weight: 500;
+}
+.k-stat-hero .k-stat-value {
+  font-size: var(--k-fs-hero);
+  font-weight: 650;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  color: var(--k-text);
+}
+.k-stat-hero .k-stat-value small {
+  font-size: 0.55em;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--k-text-2);
+}
+.k-stat-hero .k-stat-delta {
+  color: var(--k-text-2);
+}
+/* Supporting figures under the hero number, split by a hairline: "What you
+   own / What you owe", "This year". Smaller, never competing. */
+.k-stat-split {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr));
+  gap: var(--k-space-3) var(--k-space-4);
+  margin-top: var(--k-space-2);
+  padding-top: var(--k-space-3);
+  box-shadow: inset 0 1px 0 light-dark(rgb(16 16 32 / 0.1), rgb(255 255 255 / 0.1));
+}
+.k-stat-sub {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.k-stat-sub > :first-child {
+  color: var(--k-text-2);
+  font-size: var(--k-fs-secondary);
+}
+.k-stat-sub > :last-child {
+  font-size: calc(var(--k-fs-stat) * 0.68);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: var(--k-track-tight);
+  font-variant-numeric: tabular-nums;
+}
+
+/* List: rows separated by hairlines inside one card. Never a stack of cards. */
+.k-list {
+  background: var(--k-wash), var(--k-bg-raised);
+  border: 1px solid var(--k-line);
+  border-top-color: var(--k-line-top);
+  border-radius: var(--k-radius-card);
+  box-shadow: var(--k-edge), var(--k-shadow-1);
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.k-list > * + * {
+  box-shadow: inset 0 1px 0 var(--k-line);
+}
+.k-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-3);
+  min-height: var(--k-row-h);
+  padding: var(--k-space-2) var(--k-space-4);
+  color: inherit;
+  text-decoration: none;
+  text-align: left;
+  width: 100%;
+  background: transparent;
+  border: 0;
+  font: inherit;
+}
+a.k-row,
+button.k-row,
+label.k-row {
+  cursor: pointer;
+  transition: background-color var(--k-dur-1) ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  a.k-row:hover,
+  button.k-row:hover,
+  label.k-row:hover {
+    background-color: var(--k-bg-hover);
+  }
+}
+a.k-row:active,
+button.k-row:active {
+  background-color: var(--k-bg-press);
+}
+.k-row[aria-current] {
+  background-color: var(--k-accent-soft);
+}
+/* Not colour alone: the selected title also goes up a weight. */
+.k-row[aria-current] .k-row-title {
+  font-weight: 600;
+  color: var(--k-accent-fg);
+}
+.k-row:focus-visible {
+  outline-offset: -2px;
+  border-radius: var(--k-radius-control);
+}
+.k-row-lead {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: var(--k-lead);
+  height: var(--k-lead);
+  border-radius: var(--k-radius-control);
+  background: var(--k-bg-inset);
+  box-shadow: inset 0 0 0 1px var(--k-line);
+  color: var(--k-text-2);
+}
+.k-row-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.k-row-title {
+  font-size: var(--k-fs-row-title);
+  font-weight: var(--k-fw-row-title);
+  line-height: 1.3;
+  letter-spacing: -0.006em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: var(--k-row-ws);
+  text-wrap: pretty;
+}
+.k-row-meta {
+  font-size: var(--k-fs-secondary);
+  color: var(--k-text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: var(--k-row-ws);
+  font-variant-numeric: tabular-nums;
+}
+.k-row-trail {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-2);
+  color: var(--k-text-2);
+  font-size: var(--k-fs-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.k-row-value {
+  font-size: var(--k-fs-row-title);
+  font-weight: var(--k-fw-row-title);
+  color: var(--k-text);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+/* Entry row: title and value share the first line; everything else in the
+   body (meta, tags, a description) runs the full width under both, so a long
+   description is not squeezed into the column beside the price. */
+.k-row-top {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  column-gap: var(--k-space-3);
+  row-gap: var(--k-space-1);
+  padding-block: var(--k-space-4);
+}
+.k-row-top:not(:has(> .k-row-lead)) {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+.k-row-top > .k-row-body {
+  display: contents;
+}
+.k-row-top > .k-row-body > * {
+  grid-column: -3 / -1;
+  min-width: 0;
+}
+.k-row-top > .k-row-body > :first-child {
+  grid-column: -3 / -2;
+  grid-row: 1;
+}
+.k-row-top > .k-row-lead {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  margin-top: 2px;
+}
+.k-row-top > .k-row-trail {
+  grid-column: -2;
+  grid-row: 1;
+  min-height: 1.3em;
+  line-height: 1.3;
+}
+.k-row-top > .k-row-body > :is(.k-tags, .k-more, p) {
+  margin-top: var(--k-space-1);
+}
+/* Compact row: one line, for dense secondary lists and title-only lists that
+   open a sheet. Still 48px on phones. */
+.k-row-compact {
+  min-height: var(--k-row-h-compact);
+  padding-block: var(--k-space-1);
+}
+.k-row-compact .k-row-title {
+  white-space: nowrap;
+}
+/* A trailing chevron says "opens": a title-only row with data-k-open="sheet". */
+.k-row-chev {
+  width: 18px;
+  height: 18px;
+  color: var(--k-text-3);
+}
+/* Group label inside a list: tracked caps, no hairline above the first row. */
+.k-list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--k-space-3);
+  min-height: 40px;
+  padding: var(--k-space-3) var(--k-space-4) var(--k-space-1);
+}
+.k-list > .k-list-head + * {
+  box-shadow: none;
+}
+/* Logo slot: a bank or brand mark, round. Takes an <img>, or one letter on a
+   categorical tint (data-cat) when there is no logo. */
+.k-logo {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: var(--k-lead);
+  height: var(--k-lead);
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--k-c-soft, var(--k-bg-press));
+  box-shadow: inset 0 0 0 1px var(--k-line);
+  color: var(--k-c, var(--k-text-2));
+  font-size: calc(var(--k-lead) * 0.42);
+  font-weight: 600;
+  line-height: 1;
+}
+.k-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.k-row-trail > .k-icon:last-child {
+  color: var(--k-text-3);
+}
+
+/* Swipe row: .k-swipe wraps .k-swipe-actions (behind) and one .k-row (front).
+   kit.js drags the row; the actions are real buttons, reachable by keyboard. */
+.k-swipe {
+  position: relative;
+  overflow: hidden;
+  touch-action: pan-y pinch-zoom;
+}
+.k-list > * + .k-swipe::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  background: var(--k-line);
+  z-index: 2;
+  pointer-events: none;
+}
+.k-swipe > .k-row {
+  z-index: 1;
+  background: var(--k-bg-raised);
+  will-change: transform;
+}
+/* The front row stays opaque when hovered so the actions never show through. */
+@media (hover: hover) and (pointer: fine) {
+  .k-swipe > a.k-row:hover,
+  .k-swipe > button.k-row:hover {
+    background: linear-gradient(var(--k-bg-hover), var(--k-bg-hover)), var(--k-bg-raised);
+  }
+}
+.k-swipe-actions {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: flex-end;
+}
+.k-swipe-actions[data-side='start'] {
+  justify-content: flex-start;
+}
+.k-swipe-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 76px;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-size: var(--k-fs-meta);
+  font-weight: 500;
+  cursor: pointer;
+  background: var(--k-bg-press);
+  color: var(--k-text);
+}
+.k-swipe-action[data-tone='danger'] {
+  background: var(--k-danger-bg);
+  color: var(--k-on-danger);
+}
+.k-swipe-action[data-tone='accent'] {
+  background: var(--k-accent);
+  color: var(--k-on-accent);
+}
+.k-swipe-action:focus-visible {
+  outline-offset: -3px;
+  outline-color: currentColor;
+}
+/* With a mouse, hovering a row shows its actions as a compact toolbar on the
+   right, so nothing needs a drag (WCAG 2.5.7). Touch has long-press. */
+@media (hover: hover) and (pointer: fine) {
+  .k-swipe:is(:hover, :focus-within):not([data-open='start'], [data-open='end']) > .k-swipe-actions {
+    z-index: 2;
+    inset: 0 var(--k-space-3) 0 auto;
+    align-items: center;
+    gap: var(--k-space-1);
+    padding-left: var(--k-space-6);
+    /* Same colour as the hovered row under it, fading in from the left. */
+    background: linear-gradient(var(--k-bg-hover), var(--k-bg-hover)), var(--k-bg-raised);
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--k-space-6));
+    mask-image: linear-gradient(to right, transparent, #000 var(--k-space-6));
+    animation: k-appear var(--k-dur-1) var(--k-ease-out);
+  }
+  .k-swipe:is(:hover, :focus-within):not([data-open='start'], [data-open='end']) > .k-swipe-actions[data-side='start'] {
+    right: calc(var(--k-space-3) + var(--k-end-n, 0) * 40px);
+    padding-left: var(--k-space-1);
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .k-swipe:is(:hover, :focus-within):not([data-open='start'], [data-open='end']) .k-swipe-action {
+    width: var(--k-control-h);
+    height: var(--k-control-h);
+    border-radius: var(--k-radius-control);
+    background: transparent;
+    color: var(--k-text-2);
+  }
+  .k-swipe:is(:hover, :focus-within):not([data-open='start'], [data-open='end']) .k-swipe-action:hover {
+    background: var(--k-bg-hover);
+    color: var(--k-text);
+  }
+  .k-swipe:is(:hover, :focus-within):not([data-open='start'], [data-open='end']) .k-swipe-action[data-tone='danger']:hover {
+    background: var(--k-danger-soft);
+    color: var(--k-danger);
+  }
+  .k-swipe:is(:hover, :focus-within):not([data-open='start'], [data-open='end']) .k-swipe-action span {
+    display: none;
+  }
+}
+
+/* 9. Progressive disclosure ---------------------------------------------- */
+/* Lists show the title; the rest is one tap away, never deleted.
+   Disclosure: a heavy block collapsed by default (flights, a day's detail).
+   Native <details>, so it works and is announced with no JS; kit.js animates
+   the height and the chevron, and a tap mid-animation reverses it.
+     <details class="k-disclosure k-card">
+       <summary class="k-disclosure-head">
+         <span class="k-row-body"><span class="k-row-title">Flights</span>
+           <span class="k-row-meta">3 legs, Perth to Bangkok</span></span>
+         <svg class="k-icon k-disclosure-chev"><use href="icons.svg#i-chev-down"/></svg>
+       </summary>
+       <div class="k-disclosure-body">...</div>
+     </details>
+   Also works bare inside a .k-list item, where it reads as an expanding row. */
+.k-disclosure {
+  min-width: 0;
+}
+.k-card.k-disclosure {
+  padding: 0;
+}
+.k-disclosure-head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-3);
+  min-height: var(--k-row-h);
+  padding: var(--k-space-3) var(--k-space-4);
+  border-radius: inherit;
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: background-color var(--k-dur-1) ease;
+}
+.k-disclosure-head::-webkit-details-marker {
+  display: none;
+}
+.k-disclosure-head:focus-visible {
+  outline-offset: -2px;
+}
+.k-disclosure-head:active {
+  background-color: var(--k-bg-press);
+}
+@media (hover: hover) and (pointer: fine) {
+  .k-disclosure-head:hover {
+    background-color: var(--k-bg-hover);
+  }
+}
+.k-disclosure[open] > .k-disclosure-head {
+  border-end-start-radius: 0;
+  border-end-end-radius: 0;
+}
+.k-disclosure-chev {
+  flex: none;
+  margin-left: auto;
+  color: var(--k-text-3);
+  transition: transform var(--k-dur-2) var(--k-ease-out);
+}
+.k-disclosure[open]:not([data-k-closing]) > .k-disclosure-head .k-disclosure-chev {
+  transform: rotate(180deg);
+}
+.k-disclosure-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--k-space-3);
+  padding: 0 var(--k-space-4) var(--k-space-4);
+}
+.k-disclosure-body.k-list,
+.k-disclosure-body:has(> .k-list:only-child) {
+  padding: 0;
+}
+
+/* Show more: long text kept whole, clamped to a few lines with a button that
+   expands it in place. kit.js only clamps when the text really overflows, so
+   short text shows no button, and with no JS nothing is clamped at all.
+     <div class="k-more"><p class="k-more-text">...</p></div>
+   kit.js adds the button; render your own .k-more-btn (aria-expanded,
+   aria-controls) if a framework owns the markup. --k-more-lines sets the clamp. */
+.k-more {
+  --k-more-lines: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+}
+.k-more-text {
+  color: var(--k-text-2);
+  font-size: var(--k-fs-body);
+  line-height: var(--k-lh-body);
+  overflow-wrap: anywhere;
+}
+.k-more[data-k-clamped] > .k-more-text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--k-more-lines);
+  line-clamp: var(--k-more-lines);
+  overflow: hidden;
+}
+.k-more-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--k-accent-fg);
+  font: inherit;
+  font-size: var(--k-fs-secondary);
+  font-weight: 600;
+  cursor: pointer;
+}
+.k-more-btn::after {
+  content: '';
+  position: absolute;
+  inset: -6px -12px;
+}
+.k-more-btn .k-icon {
+  width: 16px;
+  height: 16px;
+  transition: transform var(--k-dur-2) var(--k-ease-out);
+}
+.k-more-btn[aria-expanded='true'] .k-icon {
+  transform: rotate(180deg);
+}
+.k-more:not([data-k-ready]) > .k-more-btn,
+.k-more-btn[hidden] {
+  display: none;
+}
+
+/* 10. Controls ---------------------------------------------------------- */
+
+/* Buttons. One size system (--k-control-h, -sm, -lg, all 44px on phones),
+   round ends everywhere, and four ranks:
+     .k-btn-primary   the one main action (accent fill)
+     .k-btn           secondary: accent tint, accent text. The default.
+     .k-btn-neutral   secondary that should not draw the eye (Cancel)
+     .k-btn-ghost     tertiary, no fill
+   plus .k-btn-danger and .k-btn-danger-soft. Buttons side by side go in a
+   .k-btn-row or .k-actions, which hold them to one height. */
+.k-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--k-space-2);
+  min-height: var(--k-control-h);
+  min-width: var(--k-hit);
+  padding: 0 calc(var(--k-control-h) * 0.4);
+  border: 1px solid transparent;
+  border-radius: var(--k-radius-btn);
+  background: var(--k-accent-soft);
+  box-shadow: none;
+  color: var(--k-accent-fg);
+  font: inherit;
+  font-size: var(--k-fs-control);
+  font-weight: 550;
+  line-height: 1;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background-color var(--k-dur-1) ease,
+    border-color var(--k-dur-1) ease,
+    color var(--k-dur-1) ease,
+    opacity var(--k-dur-1) ease,
+    transform var(--k-dur-press) var(--k-ease-out);
+}
+.k-btn::after,
+.k-iconbtn::after {
+  content: '';
+  position: absolute;
+  /* Measured from the padding box, so subtract the 1px border. */
+  inset: min(-1px, calc((var(--k-control-h) - var(--k-hit)) / 2 - 1px)) -1px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .k-btn:hover {
+    background: light-dark(
+      color-mix(in oklab, var(--k-accent) 16%, transparent),
+      color-mix(in oklab, var(--k-accent) 20%, transparent)
+    );
+  }
+}
+.k-btn:active {
+  transform: scale(calc(1 - 0.03 * var(--k-move)));
+}
+.k-btn .k-icon {
+  width: 18px;
+  height: 18px;
+  margin-inline: -2px;
+}
+
+.k-btn-primary {
+  background: var(--k-accent);
+  color: var(--k-on-accent);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.18),
+    0 1px 2px light-dark(rgb(16 16 40 / 0.14), rgb(0 0 0 / 0.3)),
+    0 6px 14px -6px light-dark(color-mix(in oklab, var(--k-accent) 55%, transparent), rgb(0 0 0 / 0.5));
+}
+@media (hover: hover) and (pointer: fine) {
+  .k-btn-primary:hover {
+    background: var(--k-accent-hover);
+  }
+}
+.k-btn-neutral {
+  background: var(--k-bg-elevated);
+  border-color: var(--k-line-strong);
+  box-shadow: var(--k-edge), 0 1px 2px light-dark(rgb(16 16 40 / 0.05), rgb(0 0 0 / 0.25));
+  color: var(--k-text);
+}
+@media (hover: hover) and (pointer: fine) {
+  .k-btn-neutral:hover {
+    background: var(--k-bg-elevated);
+    border-color: color-mix(in oklab, var(--k-text) 26%, transparent);
+  }
+}
+.k-btn-ghost {
+  background: transparent;
+  box-shadow: none;
+  color: var(--k-text-2);
+}
+@media (hover: hover) and (pointer: fine) {
+  .k-btn-ghost:hover {
+    background: var(--k-bg-hover);
+    color: var(--k-text);
+  }
+}
+.k-btn-danger {
+  background: var(--k-danger-bg);
+  color: var(--k-on-danger);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.14),
+    0 1px 2px light-dark(rgb(16 16 40 / 0.12), rgb(0 0 0 / 0.3));
+}
+@media (hover: hover) and (pointer: fine) {
+  .k-btn-danger:hover {
+    background: var(--k-danger-hover);
+  }
+}
+/* Quiet destructive: in lists and sheets where a filled red would shout. */
+.k-btn-danger-soft {
+  background: var(--k-danger-soft);
+  box-shadow: none;
+  color: var(--k-danger);
+}
+@media (hover: hover) and (pointer: fine) {
+  .k-btn-danger-soft:hover {
+    background: color-mix(in oklab, var(--k-danger) 20%, transparent);
+  }
+}
+.k-btn-sm {
+  min-height: var(--k-control-h-sm);
+  padding: 0 calc(var(--k-control-h-sm) * 0.36);
+  font-size: max(var(--k-fs-13), calc(var(--k-fs-control) - 0.125rem));
+}
+.k-btn-sm::after {
+  inset: min(-1px, calc((var(--k-control-h-sm) - var(--k-hit)) / 2 - 1px)) -1px;
+}
+.k-btn-lg {
+  min-height: var(--k-control-h-lg);
+  padding: 0 calc(var(--k-control-h-lg) * 0.42);
+  font-size: max(var(--k-fs-control), var(--k-fs-15));
+}
+.k-btn-lg::after {
+  inset: -1px;
+}
+.k-btn-block {
+  width: 100%;
+}
+.k-btn:disabled,
+.k-btn[aria-disabled='true'] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+.k-btn[aria-busy='true'] {
+  cursor: progress;
+  pointer-events: none;
+}
+.k-btn[aria-busy='true'] .k-spinner {
+  margin-inline: -2px;
+}
+/* Groups. In a row, buttons sit at natural width and wrap; .k-actions makes
+   them share the width equally (sheet feet, dialogs, the action bar). Either
+   way every button in the group takes the tallest one's height, so two
+   buttons side by side can never differ in height or shape. */
+.k-btn-row,
+.k-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--k-gap-actions);
+}
+:is(.k-btn-row, .k-actions, .k-sheet-foot, .k-dialog-actions, .k-actionbar) > .k-btn {
+  align-self: stretch;
+}
+.k-actions > .k-btn {
+  flex: 1 1 0;
+  min-width: min(100%, 7.5rem);
+  min-height: var(--k-control-h-lg);
+  padding-inline: var(--k-space-4);
+  font-size: max(var(--k-fs-control), var(--k-fs-15));
+  white-space: normal;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.k-iconbtn {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: var(--k-control-h);
+  height: var(--k-control-h);
+  padding: 0;
+  border: 0;
+  border-radius: var(--k-radius-btn);
+  background: transparent;
+  color: var(--k-text-2);
+  cursor: pointer;
+  transition:
+    background-color var(--k-dur-1) ease,
+    color var(--k-dur-1) ease,
+    transform var(--k-dur-press) var(--k-ease-out);
+}
+.k-iconbtn::after {
+  inset: min(0px, calc((var(--k-control-h) - var(--k-hit)) / 2));
+}
+/* Icon button with a fill, for a standalone round action (sort, filter). */
+.k-iconbtn-soft {
+  background: var(--k-accent-soft);
+  color: var(--k-accent-fg);
+}
+@media (hover: hover) and (pointer: fine) {
+  .k-iconbtn:hover {
+    background: var(--k-bg-hover);
+    color: var(--k-text);
+  }
+}
+.k-iconbtn:active {
+  background: var(--k-bg-press);
+  transform: scale(calc(1 - 0.06 * var(--k-move)));
+}
+.k-iconbtn:disabled,
+.k-iconbtn[aria-disabled='true'] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.k-iconbtn[aria-pressed='true'] {
+  color: var(--k-accent-fg);
+  background: var(--k-accent-soft);
+}
+
+/* Field: label, control, then an inline error when there is one. */
+.k-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.k-label {
+  font-size: var(--k-fs-secondary);
+  font-weight: 500;
+  color: var(--k-text-2);
+}
+.k-field-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: var(--k-fs-secondary);
+  color: var(--k-danger);
+}
+.k-field-error .k-icon {
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+}
+
+.k-input,
+.k-textarea,
+.k-select {
+  width: 100%;
+  min-height: var(--k-control-h);
+  padding: 0 var(--k-space-3);
+  border: 1px solid var(--k-line-control);
+  border-radius: var(--k-radius-control);
+  background: var(--k-bg-field);
+  color: var(--k-text);
+  font: inherit;
+  font-size: var(--k-fs-input);
+  line-height: var(--k-lh);
+  transition:
+    border-color var(--k-dur-1) ease,
+    box-shadow var(--k-dur-1) ease;
+}
+.k-input::placeholder,
+.k-textarea::placeholder {
+  color: var(--k-text-3);
+  opacity: 1;
+}
+@media (hover: hover) and (pointer: fine) {
+  .k-input:hover,
+  .k-textarea:hover,
+  .k-select:hover {
+    border-color: color-mix(in oklab, var(--k-line-control) 60%, var(--k-text));
+  }
+}
+.k-input:focus-visible,
+.k-textarea:focus-visible,
+.k-select:focus-visible,
+.k-input:focus,
+.k-textarea:focus {
+  outline: none;
+  border-color: var(--k-focus);
+  box-shadow: 0 0 0 3px var(--k-accent-soft);
+}
+.k-input[aria-invalid='true'],
+.k-textarea[aria-invalid='true'],
+.k-select[aria-invalid='true'] {
+  border-color: var(--k-danger);
+}
+.k-input[aria-invalid='true']:focus,
+.k-textarea[aria-invalid='true']:focus {
+  box-shadow: 0 0 0 3px var(--k-danger-soft);
+}
+.k-input:disabled,
+.k-textarea:disabled,
+.k-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.k-textarea {
+  min-height: 88px;
+  padding: calc((var(--k-control-h) - 1lh) / 2 - 1px) var(--k-space-3);
+  resize: vertical;
+  field-sizing: content;
+  max-height: 40vh;
+}
+.k-select {
+  appearance: none;
+  padding-right: 34px;
+  cursor: pointer;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--k-text-2) 50%),
+    linear-gradient(135deg, var(--k-text-2) 50%, transparent 50%);
+  background-position:
+    calc(100% - 17px) 50%,
+    calc(100% - 12px) 50%;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+}
+.k-select option {
+  background: var(--k-bg-elevated);
+  color: var(--k-text);
+}
+/* Touch devices: 16px so iOS does not zoom on focus, and fields reach the
+   44px target since an input cannot carry a hit-area pseudo-element. */
+@media (hover: none) and (pointer: coarse) {
+  .k-input,
+  .k-textarea,
+  .k-select,
+  .k-composer-input {
+    font-size: 16px;
+  }
+  .k-input,
+  .k-select {
+    min-height: var(--k-hit);
+  }
+}
+.k-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.k-input-wrap > .k-icon {
+  position: absolute;
+  left: 11px;
+  color: var(--k-text-3);
+  pointer-events: none;
+}
+.k-input-wrap > .k-input {
+  padding-left: 36px;
+}
+
+/* Toggle: <label class="k-toggle"><input type="checkbox" role="switch"> Label</label> */
+.k-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--k-space-3);
+  min-height: var(--k-hit);
+  cursor: pointer;
+  user-select: none;
+}
+.k-toggle input {
+  appearance: none;
+  position: relative;
+  flex: none;
+  width: var(--k-toggle-w);
+  height: var(--k-toggle-h);
+  margin: 0;
+  border: 1px solid var(--k-line-control);
+  border-radius: var(--k-radius-pill);
+  background: light-dark(rgb(16 16 32 / 0.1), var(--k-bg-inset));
+  cursor: pointer;
+  transition:
+    background-color var(--k-dur-1) ease,
+    border-color var(--k-dur-1) ease;
+}
+.k-toggle input::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: calc(var(--k-toggle-h) - 6px);
+  height: calc(var(--k-toggle-h) - 6px);
+  border-radius: var(--k-radius-pill);
+  background: light-dark(#fff, var(--k-text-2));
+  box-shadow:
+    0 0 0 0.5px rgb(0 0 0 / 0.12),
+    0 1px 2px rgb(0 0 0 / 0.3);
+  transform-origin: left center;
+  transition:
+    transform var(--k-spring-snappy-dur) var(--k-spring-snappy),
+    width var(--k-dur-1) var(--k-ease-out),
+    background-color var(--k-dur-1) ease;
+}
+.k-toggle input:checked {
+  background: var(--k-accent);
+  border-color: var(--k-accent);
+}
+.k-toggle input:checked::before {
+  background: var(--k-on-accent);
+  transform: translateX(calc(var(--k-toggle-w) - var(--k-toggle-h)));
+}
+/* The thumb stretches while pressed, like a finger leaning on it. */
+.k-toggle input:active::before {
+  width: calc(var(--k-toggle-h) - 2px);
+}
+.k-toggle input:checked:active::before {
+  transform: translateX(calc(var(--k-toggle-w) - var(--k-toggle-h) - 4px));
+}
+.k-toggle input:focus-visible {
+  outline: 2px solid var(--k-focus);
+  outline-offset: 2px;
+}
+.k-toggle input:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.k-toggle:has(input:disabled) {
+  cursor: not-allowed;
+  color: var(--k-text-3);
+}
+label.k-row.k-toggle {
+  display: flex;
+}
+
+/* Segmented: radios in a recessed track. kit.js adds the sliding thumb; without
+   it the checked segment is filled, so it still works. */
+.k-seg {
+  position: relative;
+  display: inline-grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  align-items: stretch;
+  min-height: var(--k-control-h);
+  padding: 3px;
+  border: 1px solid var(--k-line-control);
+  border-radius: var(--k-radius-btn);
+  background: var(--k-bg-inset);
+  isolation: isolate;
+}
+/* A segmented control never scrolls (that would clip its hit areas): on a
+   phone use .k-seg-block, whose segments share the width and shrink to fit,
+   or move a long set of options into .k-chips. */
+.k-seg {
+  max-width: 100%;
+}
+.k-seg-block {
+  display: grid;
+  width: 100%;
+}
+.k-seg-block label {
+  min-width: 0;
+  padding-inline: var(--k-space-2);
+}
+.k-seg label {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 44px;
+  padding: 0 var(--k-space-3);
+  border-radius: var(--k-radius-btn);
+  color: var(--k-text-2);
+  font-size: max(var(--k-fs-13), calc(var(--k-fs-control) - 0.0625rem));
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition: color var(--k-dur-1) ease;
+}
+.k-seg label::after {
+  content: '';
+  position: absolute;
+  inset: -7px 0;
+}
+.k-seg input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.k-seg label:has(input:checked) {
+  color: var(--k-text);
+  font-weight: 600;
+  background: var(--k-bg-elevated);
+  box-shadow:
+    inset 0 0 0 1px var(--k-line-control),
+    0 1px 3px light-dark(rgb(16 16 40 / 0.1), rgb(0 0 0 / 0.4));
+}
+.k-seg label:has(input:focus-visible) {
+  outline: 2px solid var(--k-focus);
+  outline-offset: 1px;
+}
+.k-seg-thumb {
+  display: none;
+}
+.k-seg[data-k-ready] label:has(input:checked) {
+  background: transparent;
+  box-shadow: none;
+}
+.k-seg[data-k-ready] .k-seg-thumb {
+  display: block;
+  position: absolute;
+  z-index: -1;
+  top: 3px;
+  bottom: 3px;
+  left: 0;
+  width: var(--w, 0);
+  transform: translateX(var(--x, 0));
+  border-radius: var(--k-radius-btn);
+  background: var(--k-bg-elevated);
+  /* The ring is the 3:1 boundary that marks the selected segment. */
+  box-shadow:
+    inset 0 0 0 1px var(--k-line-control),
+    0 1px 3px light-dark(rgb(16 16 40 / 0.1), rgb(0 0 0 / 0.4));
+}
+.k-seg[data-k-moved] .k-seg-thumb {
+  transition:
+    transform var(--k-spring-snappy-dur) var(--k-spring-snappy),
+    width var(--k-dur-2) var(--k-ease-out);
+}
+
+/* Chips: filters in one row. The row never wraps and never widens the page:
+   it scrolls sideways with snap, bleeding to the screen edge, and fades at
+   the edges only when there is more to scroll to.
+     <div class="k-chips" role="group" aria-label="Filter">
+       <button class="k-chip" aria-pressed="true">All</button> ...
+   or <label class="k-chip"><input type="radio" name="f">All</label>. */
+.k-chips {
+  display: flex;
+  gap: var(--k-space-2);
+  padding-block: 2px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+}
+/* Straight on the page, the row runs to the screen edges so a cut-off chip
+   says "scroll for more" instead of looking clipped. */
+:is(.k-page, .k-section, .k-stack) > .k-chips {
+  margin-inline: calc(-1 * var(--k-space-4));
+  padding-inline: var(--k-space-4);
+  scroll-padding-inline: var(--k-space-4);
+}
+.k-chips::-webkit-scrollbar {
+  display: none;
+}
+.k-chip {
+  position: relative;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: max(32px, calc(var(--k-control-h) - 4px));
+  padding: 0 var(--k-space-3);
+  border: 1px solid var(--k-line-strong);
+  border-radius: var(--k-radius-btn);
+  background: transparent;
+  color: var(--k-text-2);
+  font: inherit;
+  font-size: var(--k-fs-secondary);
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  scroll-snap-align: start;
+  user-select: none;
+  transition:
+    background-color var(--k-dur-1) ease,
+    border-color var(--k-dur-1) ease,
+    color var(--k-dur-1) ease,
+    transform var(--k-dur-press) var(--k-ease-out);
+}
+.k-chip::after {
+  content: '';
+  position: absolute;
+  inset: min(-1px, calc((max(32px, calc(var(--k-control-h) - 4px)) - var(--k-hit)) / 2 - 1px)) -1px;
+}
+.k-chip input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.k-chip:is([aria-pressed='true'], :has(input:checked)) {
+  background: var(--k-accent-soft);
+  border-color: transparent;
+  color: var(--k-accent-fg);
+  font-weight: 600;
+}
+.k-chip:has(input:focus-visible) {
+  outline: 2px solid var(--k-focus);
+  outline-offset: 2px;
+}
+.k-chip:active {
+  transform: scale(calc(1 - 0.04 * var(--k-move)));
+}
+@media (hover: hover) and (pointer: fine) {
+  .k-chip:not([aria-pressed='true'], :has(input:checked)):hover {
+    color: var(--k-text);
+    border-color: color-mix(in oklab, var(--k-text) 26%, transparent);
+  }
+}
+.k-chip .k-icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* Tabs: buttons in a tablist with one ink line that kit.js slides. */
+.k-tabs {
+  position: relative;
+  display: flex;
+  gap: var(--k-space-1);
+  box-shadow: inset 0 -1px 0 var(--k-line);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.k-tab {
+  position: relative;
+  min-height: var(--k-hit);
+  padding: 0 var(--k-space-3);
+  border: 0;
+  background: transparent;
+  color: var(--k-text-2);
+  font: inherit;
+  font-size: var(--k-fs-control);
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color var(--k-dur-1) ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .k-tab:hover {
+    color: var(--k-text);
+  }
+}
+.k-tab[aria-selected='true'] {
+  color: var(--k-text);
+  box-shadow: inset 0 -2px 0 var(--k-accent-fg);
+}
+.k-tab:focus-visible {
+  outline-offset: -4px;
+  border-radius: var(--k-radius-control);
+}
+.k-tabs-ink {
+  display: none;
+}
+.k-tabs[data-k-ready] .k-tab[aria-selected='true'] {
+  box-shadow: none;
+}
+.k-tabs[data-k-ready] .k-tabs-ink {
+  display: block;
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: var(--w, 0);
+  transform: translateX(var(--x, 0));
+  border-radius: 2px;
+  background: var(--k-accent-fg);
+  pointer-events: none;
+}
+.k-tabs[data-k-moved] .k-tabs-ink {
+  transition:
+    transform var(--k-spring-snappy-dur) var(--k-spring-snappy),
+    width var(--k-dur-2) var(--k-ease-out);
+}
+
+/* 11. Overlays ---------------------------------------------------------- */
+
+/* Sheet: <dialog class="k-sheet">. kit.js opens it with a spring and lets the
+   handle drag it closed. Bottom sheet on phones, floating panel on desktop. */
+.k-sheet {
+  position: fixed;
+  inset: auto 0 0;
+  width: 100%;
+  max-width: 560px;
+  max-height: min(88dvh, 760px);
+  margin: auto auto 0;
+  padding: 0 0 env(safe-area-inset-bottom);
+  border: 0;
+  border-radius: var(--k-radius-sheet) var(--k-radius-sheet) 0 0;
+  background: var(--k-bg-elevated);
+  color: var(--k-text);
+  box-shadow: var(--k-edge), var(--k-shadow-3);
+  overflow: hidden;
+  display: none;
+  flex-direction: column;
+  overscroll-behavior: contain;
+}
+.k-sheet[open] {
+  display: flex;
+}
+.k-sheet::backdrop,
+.k-dialog::backdrop {
+  background: var(--k-scrim);
+}
+.k-sheet-handle {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  height: 22px;
+  cursor: grab;
+  touch-action: pinch-zoom;
+}
+.k-sheet-handle::before {
+  content: '';
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--k-line-strong);
+}
+.k-sheet-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-2);
+  padding: 0 var(--k-space-2) var(--k-space-2) var(--k-space-4);
+  touch-action: pinch-zoom;
+}
+.k-sheet-title {
+  flex: 1;
+  font-size: var(--k-fs-17);
+  font-weight: 600;
+  letter-spacing: var(--k-track-tight);
+}
+.k-sheet-body {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 var(--k-space-4) var(--k-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--k-space-3);
+}
+.k-sheet-foot {
+  flex: none;
+  display: flex;
+  gap: var(--k-space-2);
+  padding: var(--k-space-3) var(--k-space-4) var(--k-space-4);
+  box-shadow: inset 0 1px 0 var(--k-line);
+}
+.k-sheet-foot > .k-btn {
+  flex: 1;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.2;
+}
+@media (min-width: 640px) {
+  .k-sheet {
+    bottom: var(--k-space-4);
+    border-radius: var(--k-radius-sheet);
+  }
+}
+
+/* Dialog: only for tasks that need interruption (confirm a delete). */
+.k-dialog {
+  width: calc(100% - 32px);
+  max-width: 400px;
+  padding: var(--k-space-5) var(--k-space-5) var(--k-space-4);
+  border: 0;
+  border-radius: var(--k-radius-card);
+  background: var(--k-bg-elevated);
+  color: var(--k-text);
+  box-shadow: var(--k-edge), var(--k-shadow-3);
+  overscroll-behavior: contain;
+}
+.k-dialog-title {
+  font-size: var(--k-fs-17);
+  font-weight: 600;
+  letter-spacing: var(--k-track-tight);
+  margin-bottom: 6px;
+}
+.k-dialog-body {
+  color: var(--k-text-2);
+}
+.k-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--k-space-2);
+  margin-top: var(--k-space-5);
+}
+
+/* Toasts: kit.js toast() fills .k-toasts (created on first use). The host is
+   a manual popover, so it sits in the top layer above every sheet, dialog and
+   scrim, and kit.js moves it inside the open modal so it stays clickable. The
+   z-index is only the fallback for browsers without popover. Ladder: sticky
+   chrome 1 to 20, disabled-reason popover 70, skip link 100, toasts 200. */
+.k-toasts {
+  position: fixed;
+  z-index: 200;
+  inset: auto;
+  overflow: visible;
+  border: 0;
+  background: none;
+  color: inherit;
+  left: 50%;
+  bottom: calc(72px + env(safe-area-inset-bottom));
+  width: min(420px, calc(100% - 24px));
+  translate: -50% 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: var(--k-space-2);
+  pointer-events: none;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+@media (min-width: 1024px) {
+  .k-toasts {
+    left: auto;
+    right: var(--k-space-5);
+    bottom: var(--k-space-5);
+    width: 380px;
+    translate: none;
+  }
+}
+.k-toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 6px 6px 6px 14px;
+  border-radius: var(--k-radius-card);
+  background: var(--k-bg-elevated);
+  border: 1px solid var(--k-line-strong);
+  box-shadow: var(--k-edge), var(--k-shadow-2);
+  color: var(--k-text);
+  font-size: var(--k-fs-control);
+}
+.k-toast-msg {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 0;
+}
+.k-toast-detail {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--k-font-mono);
+  font-size: var(--k-fs-meta);
+  color: var(--k-text-3);
+  overflow-wrap: anywhere;
+}
+.k-toast > .k-icon,
+.k-toast > .k-tick {
+  color: var(--k-text-2);
+}
+.k-toast[data-tone='ok'] > .k-icon,
+.k-toast[data-tone='ok'] > .k-tick {
+  color: var(--k-ok);
+}
+.k-toast[data-tone='danger'] > .k-icon {
+  color: var(--k-danger);
+}
+.k-toast .k-btn {
+  flex: none;
+}
+
+/* Why a control is disabled: kit.js shows this next to an aria-disabled
+   control that has data-why, on tap or focus. */
+.k-why {
+  position: absolute;
+  z-index: 70;
+  max-width: 260px;
+  padding: 8px 10px;
+  border-radius: var(--k-radius-control);
+  background: var(--k-bg-elevated);
+  box-shadow: var(--k-shadow-3);
+  color: var(--k-text);
+  font-size: var(--k-fs-secondary);
+  line-height: 1.35;
+  pointer-events: none;
+}
+
+/* 12. Feedback --------------------------------------------------------- */
+
+.k-skel {
+  position: relative;
+  display: block;
+  height: 12px;
+  border-radius: var(--k-radius-chip);
+  background: light-dark(rgb(16 16 32 / 0.07), rgb(255 255 255 / 0.06));
+  overflow: hidden;
+}
+.k-skel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    light-dark(rgb(255 255 255 / 0.7), rgb(255 255 255 / 0.05)),
+    transparent
+  );
+  transform: translateX(-100%);
+  animation: k-shimmer 1.4s var(--k-ease-inout) infinite;
+}
+.k-skel-title {
+  height: 14px;
+}
+.k-skel-num {
+  height: 26px;
+  width: 9ch;
+}
+.k-skel-lead {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--k-radius-control);
+  flex: none;
+}
+
+.k-spinner {
+  display: inline-block;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in oklab, currentColor 22%, transparent);
+  border-top-color: currentColor;
+  animation: k-spin 600ms linear infinite;
+}
+.k-spinner-lg {
+  width: 22px;
+  height: 22px;
+}
+
+/* Busy: spinner plus what is happening now. .k-slow appears on its own after
+   4s with the cold-start warning. */
+.k-busy {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--k-text-2);
+  font-size: var(--k-fs-secondary);
+}
+.k-busy-line {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--k-space-2);
+}
+.k-busy-line .k-spinner {
+  color: var(--k-text);
+}
+.k-slow {
+  color: var(--k-text-3);
+  padding-left: 24px;
+  animation: k-appear var(--k-dur-2) var(--k-ease-out) 4s both;
+}
+
+.k-progress {
+  position: relative;
+  height: 4px;
+  border-radius: 2px;
+  background: light-dark(rgb(16 16 32 / 0.08), rgb(255 255 255 / 0.08));
+  overflow: hidden;
+}
+.k-progress-bar {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--k-accent);
+  transform-origin: left center;
+  transform: scaleX(var(--k-progress, 0));
+  transition: transform var(--k-dur-3) var(--k-ease-out);
+}
+
+/* Stepped progress: <ol class="k-steps"> with li[data-state=done|active|todo|error]. */
+.k-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.k-step {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--k-space-3);
+  padding: 6px 0;
+  color: var(--k-text-3);
+  font-size: var(--k-fs-body);
+}
+.k-step-mark {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+}
+.k-step-mark::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--k-line-control);
+}
+.k-step:not(:last-child) .k-step-mark::after {
+  content: '';
+  position: absolute;
+  top: 22px;
+  left: 9.5px;
+  width: 1px;
+  height: calc(100% + 4px);
+  background: var(--k-line-strong);
+}
+.k-step-text {
+  flex: 1;
+  min-width: 0;
+  padding-top: 1px;
+}
+.k-step-detail {
+  display: block;
+  font-size: var(--k-fs-secondary);
+  color: var(--k-text-2);
+}
+.k-step[data-state='done'] {
+  color: var(--k-text-2);
+}
+.k-step[data-state='done'] .k-step-mark::before {
+  width: 16px;
+  height: 16px;
+  background: var(--k-ok-soft);
+}
+.k-step[data-state='done'] .k-step-mark .k-icon {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  stroke-width: 2.25;
+  color: var(--k-ok);
+}
+.k-step[data-state='active'] {
+  color: var(--k-text);
+  font-weight: 500;
+}
+.k-step[data-state='active'] .k-step-mark::before {
+  display: none;
+}
+.k-step[data-state='active'] .k-step-detail {
+  font-weight: 400;
+}
+.k-step[data-state='error'] {
+  color: var(--k-danger);
+}
+.k-step[data-state='error'] .k-step-mark::before {
+  width: 8px;
+  height: 8px;
+  background: var(--k-danger);
+}
+
+/* Empty state: drawing, one line, the obvious action. */
+.k-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--k-space-3);
+  padding: var(--k-space-6) var(--k-space-4);
+}
+.k-empty-art {
+  width: 120px;
+  height: 72px;
+  color: var(--k-text-3);
+  margin-bottom: var(--k-space-1);
+}
+.k-empty-title {
+  font-size: var(--k-fs-row-title);
+  font-weight: 500;
+  color: var(--k-text);
+  max-width: 34ch;
+}
+
+/* Error state: replaces a view that failed to load. Plain headline, the real
+   error underneath, a retry. */
+.k-error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--k-space-3);
+  padding: var(--k-space-6) var(--k-space-4);
+}
+.k-error-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--k-danger-soft);
+  color: var(--k-danger);
+}
+.k-error-title {
+  font-size: var(--k-fs-row-title);
+  font-weight: 600;
+}
+.k-error-detail {
+  max-width: 100%;
+  padding: 6px 10px;
+  border-radius: var(--k-radius-chip);
+  background: var(--k-bg-inset);
+  box-shadow: inset 0 0 0 1px var(--k-line);
+  color: var(--k-text-2);
+  font-family: var(--k-font-mono);
+  font-size: var(--k-fs-meta);
+  overflow-wrap: anywhere;
+}
+
+/* Inline error at the point of the action. A tint, never a side border. */
+.k-inline-error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 8px 8px 12px;
+  border-radius: var(--k-radius-control);
+  background: var(--k-danger-soft);
+  color: var(--k-text);
+  font-size: var(--k-fs-body);
+}
+.k-inline-error > .k-icon {
+  color: var(--k-danger);
+}
+.k-inline-error-text {
+  flex: 1;
+  min-width: 0;
+}
+.k-inline-error-text small {
+  display: block;
+  color: var(--k-text-2);
+  font-family: var(--k-font-mono);
+  font-size: var(--k-fs-meta);
+  overflow-wrap: anywhere;
+}
+
+/* Offline banner: sits under the top bar while disconnected. */
+/* Offline banner: last child of .k-topbar, so it sticks with the bar. */
+.k-offline {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-2);
+  min-height: 36px;
+  padding: 0 var(--k-space-4);
+  background: linear-gradient(var(--k-warn-soft), var(--k-warn-soft)), var(--k-bg);
+  color: var(--k-text);
+  font-size: var(--k-fs-secondary);
+}
+.k-topbar > .k-offline {
+  flex: 1 0 100%;
+  margin: 0 calc(-1 * var(--k-space-2)) 0 calc(-1 * var(--k-space-4));
+}
+.k-offline[hidden] {
+  display: none;
+}
+.k-offline .k-num {
+  margin-left: auto;
+  color: var(--k-text-2);
+  white-space: nowrap;
+}
+
+/* Success tick: an SVG that draws itself once. */
+.k-tick {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  color: var(--k-ok);
+}
+.k-tick circle {
+  stroke-dasharray: 57;
+  stroke-dashoffset: 57;
+  animation: k-draw 320ms var(--k-ease-out) forwards;
+}
+.k-tick path {
+  stroke-dasharray: 14;
+  stroke-dashoffset: 14;
+  animation: k-draw 220ms var(--k-ease-out) 160ms forwards;
+}
+
+/* 13. Badge, pill, tag, dot, category bar, time block, avatar ----------------------------------------- */
+
+.k-badge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--k-radius-pill);
+  background: var(--k-accent);
+  color: var(--k-on-accent);
+  font-size: var(--k-fs-micro);
+  font-weight: 600;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.k-badge-quiet {
+  background: var(--k-bg-press);
+  color: var(--k-text-2);
+}
+.k-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: var(--k-radius-pill);
+  background: var(--k-bg-inset);
+  box-shadow: inset 0 0 0 1px var(--k-line-strong);
+  color: var(--k-text-2);
+  font-size: var(--k-fs-meta);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.k-pill[data-tone='ok'] {
+  background: var(--k-ok-soft);
+  box-shadow: none;
+  color: var(--k-ok);
+}
+.k-pill[data-tone='warn'] {
+  background: var(--k-warn-soft);
+  box-shadow: none;
+  color: var(--k-warn);
+}
+.k-pill[data-tone='danger'] {
+  background: var(--k-danger-soft);
+  box-shadow: none;
+  color: var(--k-danger);
+}
+.k-pill[data-tone='accent'] {
+  background: var(--k-accent-soft);
+  box-shadow: none;
+  color: var(--k-accent-fg);
+}
+/* Tag: a label as plain tinted text, or a dot plus text. Not a box: boxed
+   pills on every row read as AI-generated noise (Owner: "I dont like the
+   little pills everywhere"). Keep .k-pill for a genuine status. A tag that
+   reads the same on every row is noise; show the exception only.
+     <span class="k-tag">PLA</span>
+     <span class="k-tag" data-tone="accent">Radiator</span>
+     <span class="k-tag" data-cat="3"><span class="k-dot"></span>Groceries</span> */
+.k-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--k-c, var(--k-text-2));
+  font-size: var(--k-fs-secondary);
+  font-weight: 500;
+  line-height: 1.35;
+}
+.k-tag[data-tone='accent'] {
+  color: var(--k-accent-fg);
+}
+.k-tag[data-tone='ok'] {
+  color: var(--k-ok);
+}
+.k-tag[data-tone='warn'] {
+  color: var(--k-warn);
+}
+.k-tag[data-tone='danger'] {
+  color: var(--k-danger);
+}
+.k-tag[data-tone] > .k-dot {
+  background: currentColor;
+}
+.k-tag > .k-icon {
+  width: 16px;
+  height: 16px;
+}
+/* A run of tags: wraps, separated by a faint middle dot, so six of them read
+   as one line of facts instead of six boxes. Every tag carries its separator
+   in front; the row is shifted left by one separator and clipped there, so a
+   line never starts with a dot however it wraps. */
+.k-tags {
+  --k-tag-sep: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  row-gap: 2px;
+  margin: 0 0 0 calc(-1 * var(--k-tag-sep));
+  padding: 0;
+  list-style: none;
+  clip-path: inset(-4px -4px -4px var(--k-tag-sep));
+}
+.k-tags > *::before {
+  content: '·';
+  flex: none;
+  display: inline-block;
+  width: var(--k-tag-sep);
+  text-align: center;
+  color: var(--k-text-3);
+  font-weight: 400;
+}
+.k-tags > :has(> .k-dot)::before {
+  content: '';
+}
+.k-tags > .k-tag {
+  gap: 0;
+}
+.k-tags > .k-tag > :is(.k-dot, .k-icon) {
+  margin-right: 6px;
+}
+
+.k-dot {
+  display: inline-block;
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--k-text-3);
+}
+.k-dot[data-tone='ok'] {
+  background: var(--k-ok);
+}
+.k-dot[data-tone='warn'] {
+  background: var(--k-warn);
+}
+.k-dot[data-tone='danger'] {
+  background: var(--k-danger);
+}
+.k-dot[data-tone='accent'] {
+  background: var(--k-accent-fg);
+}
+.k-dot[data-cat],
+[data-cat] > .k-dot {
+  background: var(--k-c);
+}
+
+/* Category bar: a small rounded bar in a categorical hue. Give it a width for
+   a share (style="--k-share: 0.42"), or leave it as a legend swatch.
+   Several in a .k-cat-stack make one segmented bar of shares. */
+.k-cat {
+  display: inline-block;
+  flex: none;
+  width: calc(var(--k-share, 0) * 100%);
+  min-width: 12px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--k-c, var(--k-accent));
+}
+.k-cat-stack {
+  display: flex;
+  gap: 2px;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: light-dark(rgb(16 16 32 / 0.06), rgb(255 255 255 / 0.06));
+}
+.k-cat-stack > .k-cat {
+  height: 100%;
+  min-width: 2px;
+  border-radius: 0;
+}
+
+/* Time block: one event in a time-blocked view of the day, tinted by its
+   category. The tint and the text both carry the hue; no side border.
+     <div class="k-block" data-cat="2" style="--k-span: 3">
+       <span class="k-block-title">Gym</span><span class="k-block-meta">6:00 to 7:30</span></div>
+   --k-span sets its height in rows of --k-block-row (default 24px per 30 min). */
+.k-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: calc(var(--k-span, 2) * var(--k-block-row, 24px));
+  padding: var(--k-space-2) var(--k-space-3);
+  border-radius: var(--k-radius-control);
+  background: var(--k-c-soft, var(--k-accent-soft));
+  color: var(--k-c, var(--k-accent-fg));
+  overflow: hidden;
+}
+.k-block-title {
+  font-size: var(--k-fs-secondary);
+  font-weight: 600;
+  line-height: 1.3;
+}
+.k-block-meta {
+  font-size: var(--k-fs-meta);
+  color: var(--k-text-2);
+  font-variant-numeric: tabular-nums;
+}
+.k-dot[data-live] {
+  box-shadow: 0 0 0 0 currentColor;
+  animation: k-pulse 2s var(--k-ease-out) infinite;
+}
+
+.k-avatar {
+  position: relative;
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: var(--k-lead);
+  height: var(--k-lead);
+  border-radius: 50%;
+  background: var(--k-c-soft, var(--k-bg-press));
+  color: var(--k-c, var(--k-text-2));
+  font-size: calc(var(--k-lead) * 0.38);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+/* Working state is a ring on the avatar, not a spinner plus a label. */
+.k-avatar[data-working]::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent 0 20%, var(--k-accent-fg) 100%);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px));
+  animation: k-spin 1.1s linear infinite;
+}
+
+/* 14. Composer --------------------------------------------------------- */
+/* One rounded box, textarea on top, toolbar
+   inside. Enter sends, Shift+Enter newlines (kit.js composer()). */
+
+.k-composer {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--k-space-2);
+  padding: var(--k-space-2) var(--k-space-4) calc(var(--k-space-3) + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--k-bg) 72%, transparent);
+}
+.k-composer-box {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--k-space-1);
+  padding: var(--k-space-1) var(--k-space-2) var(--k-space-2);
+  background: var(--k-wash), var(--k-bg-raised);
+  border: 1px solid var(--k-line);
+  border-top-color: var(--k-line-top);
+  border-radius: var(--k-radius-sheet);
+  box-shadow: var(--k-edge), var(--k-shadow-1);
+  transition:
+    border-color var(--k-dur-1) ease,
+    box-shadow var(--k-dur-1) ease;
+}
+.k-composer-box:focus-within {
+  border-color: var(--k-focus);
+  box-shadow:
+    var(--k-edge),
+    var(--k-shadow-1),
+    0 0 0 3px var(--k-accent-soft);
+}
+.k-composer-input {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  max-height: 40vh;
+  padding: 10px var(--k-space-2) 6px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--k-text);
+  font: inherit;
+  font-size: max(var(--k-fs-15), var(--k-fs-input));
+  line-height: var(--k-lh);
+  resize: none;
+  field-sizing: content;
+}
+.k-composer-input::placeholder {
+  color: var(--k-text-3);
+  opacity: 1;
+}
+.k-composer-input:focus-visible {
+  outline: none;
+}
+.k-composer-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--k-space-2);
+}
+.k-composer-bar > .k-spacer {
+  flex: 1;
+}
+.k-composer-pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--k-line-strong);
+  border-radius: var(--k-radius-pill);
+  background: transparent;
+  color: var(--k-text-2);
+  font: inherit;
+  font-size: var(--k-fs-meta);
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    color var(--k-dur-1) ease,
+    border-color var(--k-dur-1) ease;
+}
+.k-composer-pill::after {
+  content: '';
+  position: absolute;
+  inset: -9px -1px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .k-composer-pill:hover {
+    color: var(--k-text);
+    border-color: color-mix(in oklab, var(--k-text) 26%, transparent);
+  }
+}
+.k-send {
+  position: relative;
+  margin-left: var(--k-space-1);
+  display: inline-grid;
+  place-items: center;
+  width: calc(var(--k-control-h) - 4px);
+  height: calc(var(--k-control-h) - 4px);
+  border: 0;
+  border-radius: 50%;
+  background: var(--k-accent);
+  color: var(--k-on-accent);
+  cursor: pointer;
+  transition:
+    background-color var(--k-dur-1) ease,
+    color var(--k-dur-1) ease,
+    transform var(--k-dur-press) var(--k-ease-out);
+}
+.k-send::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+}
+.k-send .k-icon {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2.25;
+}
+.k-send:active {
+  transform: scale(calc(1 - 0.08 * var(--k-move)));
+}
+.k-send:disabled {
+  background: var(--k-bg-press);
+  color: var(--k-text-3);
+  cursor: not-allowed;
+}
+.k-send[data-mode='stop'] {
+  background: var(--k-text);
+  color: var(--k-bg);
+}
+.k-send[data-mode='stop'] .k-icon {
+  fill: currentColor;
+  stroke-width: 0;
+  width: 12px;
+  height: 12px;
+}
+.k-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px var(--k-space-1) 0;
+}
+.k-attach {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 2px 0 8px;
+  border-radius: var(--k-radius-chip);
+  background: var(--k-bg-inset);
+  box-shadow: inset 0 0 0 1px var(--k-line);
+  font-size: var(--k-fs-meta);
+  color: var(--k-text-2);
+  max-width: 220px;
+}
+.k-attach span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.k-attach .k-iconbtn {
+  --k-control-h: 24px;
+  border-radius: var(--k-radius-tag);
+}
+.k-attach .k-iconbtn::after {
+  inset: -10px;
+}
+.k-attach .k-iconbtn .k-icon {
+  width: 14px;
+  height: 14px;
+}
+/* Queued message: "Sends after this turn", removable. */
+.k-queued {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 4px 6px 12px;
+  border-radius: var(--k-radius-control);
+  background: var(--k-bg-raised);
+  border: 1px dashed var(--k-line-strong);
+  font-size: var(--k-fs-body);
+}
+.k-queued-body {
+  flex: 1;
+  min-width: 0;
+}
+.k-queued-label {
+  display: block;
+  font-size: var(--k-fs-meta);
+  color: var(--k-text-3);
+}
+.k-queued-text {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Slash commands: a tappable list above the textarea, inside the box. */
+.k-slash {
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+  box-shadow: inset 0 -1px 0 var(--k-line);
+}
+.k-slash-item {
+  display: flex;
+  align-items: baseline;
+  gap: var(--k-space-3);
+  width: 100%;
+  min-height: var(--k-hit);
+  padding: 8px 10px;
+  border: 0;
+  border-radius: var(--k-radius-control);
+  background: transparent;
+  color: var(--k-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.k-slash-item[data-active],
+.k-slash-item:hover {
+  background: var(--k-bg-hover);
+}
+.k-slash-cmd {
+  font-family: var(--k-font-mono);
+  font-size: var(--k-fs-secondary);
+  color: var(--k-accent-fg);
+  flex: none;
+}
+.k-slash-desc {
+  font-size: var(--k-fs-secondary);
+  color: var(--k-text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 15. 404 -------------------------------------------------------------- */
+
+.k-404 {
+  min-height: calc(100dvh - 160px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: var(--k-space-4);
+  padding: var(--k-space-6) var(--k-space-4);
+}
+.k-404-code {
+  font-size: var(--k-fs-secondary);
+  font-weight: 500;
+  color: var(--k-text-3);
+  font-variant-numeric: tabular-nums;
+}
+.k-404-title {
+  font-size: var(--k-fs-26);
+  font-weight: 600;
+  letter-spacing: var(--k-track-display);
+  line-height: var(--k-lh-tight);
+}
+.k-404-path {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--k-space-2);
+  max-width: 100%;
+  padding: 6px 12px;
+  border-radius: var(--k-radius-pill);
+  background: var(--k-bg-inset);
+  box-shadow: inset 0 0 0 1px var(--k-line-strong);
+  color: var(--k-text-2);
+  font-family: var(--k-font-mono);
+  font-size: var(--k-fs-secondary);
+}
+.k-404-path span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-decoration: line-through;
+  text-decoration-color: var(--k-danger);
+  text-decoration-thickness: 1.5px;
+}
+@media (min-width: 1024px) {
+  .k-404-title {
+    font-size: var(--k-fs-36);
+  }
+}
+
+/* 16. Motion ----------------------------------------------------------- */
+
+@keyframes k-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes k-shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+@keyframes k-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes k-appear {
+  from {
+    opacity: 0;
+    transform: translateY(calc(4px * var(--k-move)));
+  }
+}
+@keyframes k-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, currentColor 50%, transparent);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 6px transparent;
+  }
+}
+.k-dot[data-live][data-tone='ok'] {
+  color: var(--k-ok);
+}
+.k-dot[data-live][data-tone='accent'] {
+  color: var(--k-accent-fg);
+}
+
+/* Reduced motion: drop movement, scale, shimmer and overshoot; keep fades and
+   state changes. Spinners keep turning (they are the loading signal) but slower. */
+@media (prefers-reduced-motion: reduce) {
+  .k-skel::after,
+  .k-dot[data-live] {
+    animation: none;
+  }
+  .k-spinner,
+  .k-avatar[data-working]::before {
+    animation-duration: 1.6s;
+  }
+  .k-toggle input::before,
+  .k-seg[data-k-moved] .k-seg-thumb,
+  .k-tabs[data-k-moved] .k-tabs-ink {
+    transition-timing-function: ease;
+    transition-duration: var(--k-dur-1);
+  }
+  .k-tick circle,
+  .k-tick path {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}
+[data-motion='reduce'] .k-skel::after,
+[data-motion='reduce'] .k-dot[data-live] {
+  animation: none;
+}
+[data-motion='reduce'] .k-toggle input::before,
+[data-motion='reduce'] .k-seg[data-k-moved] .k-seg-thumb,
+[data-motion='reduce'] .k-tabs[data-k-moved] .k-tabs-ink {
+  transition-timing-function: ease;
+  transition-duration: var(--k-dur-1);
+}
+[data-motion='reduce'] .k-tick circle,
+[data-motion='reduce'] .k-tick path {
+  animation: none;
+  stroke-dashoffset: 0;
+}
+
+/* Windows high contrast: draw the state that tints and fills normally carry. */
+@media (forced-colors: active) {
+  .k-toggle input::before,
+  .k-tabs-ink,
+  .k-progress-bar,
+  .k-badge,
+  .k-dot {
+    forced-color-adjust: none;
+    background: CanvasText;
+  }
+  .k-toggle input:checked,
+  .k-progress-bar,
+  .k-tabs-ink {
+    forced-color-adjust: none;
+    background: Highlight;
+  }
+  .k-toggle input:checked::before {
+    background: Canvas;
+  }
+  .k-seg label:has(input:checked),
+  .k-seg-thumb,
+  .k-row[aria-current],
+  .k-card,
+  .k-list,
+  .k-toast,
+  .k-why,
+  .k-sheet,
+  .k-dialog {
+    border: 1px solid CanvasText;
+  }
+  .k-seg[data-k-ready] label:has(input:checked) {
+    border: 0;
+  }
+  .k-seg-thumb {
+    background: Highlight;
+  }
+  .k-seg[data-k-ready] label:has(input:checked) {
+    color: HighlightText;
+  }
+}

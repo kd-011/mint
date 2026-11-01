@@ -1,0 +1,32 @@
+name: Feature request
+description: Suggest an improvement
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Mint is deliberately small: one user, no npm dependencies, no build step. Ideas that fit that are welcome. Larger ones are best discussed here before any code is written. **Never post real financial data.**
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What are you trying to do that Mint makes hard?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What you would like
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What you do today instead
+  - type: checkboxes
+    id: check
+    attributes:
+      label: Before you submit
+      options:
+        - label: This issue contains no real financial data, names or secrets.
+          required: true
