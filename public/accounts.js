@@ -19,7 +19,7 @@ function syncCardHtml() {
   const waiting = queue.all().length;
   return `<div class="card sync" id="synccard">
     <div class="head"><span class="card-ic">${I.refresh}</span><div class="sh-t"><div class="t1">${s ? 'Syncing' : 'Sync'}</div>
-      <div class="sub">${s ? esc(s.label || 'Starting') : `Last ${esc(ago(last?.lastPollAt))}${last?.nextPollAt ? ` · next ${esc(new Date(last.nextPollAt).toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', timeZone: 'Australia/Perth' }))}` : ''}`}</div></div>
+      <div class="sub">${s ? esc(s.label || 'Starting') : `Last ${esc(ago(last?.lastPollAt))}${last?.nextPollAt ? ` · next ${esc(zoneClock(last.nextPollAt))}` : ''}`}</div></div>
       <button class="btn ${s ? 'ghost' : ''}" type="button" id="syncnow" ${s || !online ? 'disabled' : ''} title="${!online ? 'Offline: sync needs a connection' : s ? 'A sync is already running' : 'Pull the latest from every bank'}">${s ? '<span class="spin"></span>Syncing' : `${I.refresh}Sync now`}</button></div>
     ${s ? `<div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="${s.steps}" aria-valuenow="${s.step}"><i data-w="${(step * 100).toFixed(1)}"></i></div>
       <div class="steptext">Step ${s.step} of ${s.steps}${s.label ? `: ${esc(s.label)}` : ''}</div>${slow ? '<div class="slow">Still working. A first sync can take a few minutes.</div>' : ''}` : ''}
@@ -82,7 +82,7 @@ function connectionBlock(c, accounts) {
   if (c.status !== 'active') chip = `<span class="chip bad">${esc(titleCase(c.status))}</span>`;
   else if (c.consent_warning) chip = `<span class="chip warn">Renew in ${plural(c.consent_days, 'day')}</span>`;
   else chip = '<span class="chip ok">Connected</span>';
-  const exp = c.consent_expires_at ? `Consent to ${dmy(PERTH.format(new Date(c.consent_expires_at)))}${c.consent_days != null ? ` (${plural(c.consent_days, 'day')})` : ''}` : 'No consent expiry reported';
+  const exp = c.consent_expires_at ? `Consent to ${dmy(ZONE_DATE.format(new Date(c.consent_expires_at)))}${c.consent_days != null ? ` (${plural(c.consent_days, 'day')})` : ''}` : 'No consent expiry reported';
   return `<h2>${esc(c.institution)}</h2>
     <div class="rows"><div class="row"><div class="main"><div class="t2 wrap">${esc(exp)} · refreshed ${esc(ago(c.last_refreshed_at))}</div></div>${chip}</div>
     ${accounts.map(accountRow).join('')}</div>`;
@@ -99,7 +99,7 @@ function accountsSection(box) {
   const d = shownAccountsData();
   const groups = d.connections.map((c) => connectionBlock(c, d.accounts.filter((a) => a.connection_id === c.id)));
   const orphans = d.accounts.filter((a) => !a.manual && !d.connections.some((c) => c.id === a.connection_id));
-  box.innerHTML = `${d.accounts.some((a) => !a.manual) ? '' : `<div class="card">${emptyState({ icon: I.bank, title: 'No bank accounts yet', line: 'Run a sync to pull your banks.' })}</div>`}
+  box.innerHTML = `${d.accounts.some((a) => !a.manual) || !d.sync?.redbark ? '' : `<div class="card">${emptyState({ icon: I.bank, title: 'No bank accounts yet', line: 'Run a sync to pull your banks.' })}</div>`}
     <div class="stagger">${groups.join('')}${orphans.length ? `<h2>Other</h2><div class="rows">${orphans.map(accountRow).join('')}</div>` : ''}<div id="manblock">${manualBlockHtml(d)}</div></div>
     ${d.log.length ? `<h2>Recent syncs</h2><div class="rows">${d.log.slice(0, 10).map(logRow).join('')}</div>` : ''}`;
   stagger($('.stagger', box), ':scope > *');
@@ -492,7 +492,7 @@ async function viewAccounts(el, token) {
 
   const drawTop = () => {
     if (token !== renderToken) return;
-    $('#synchost', el).innerHTML = accountsData ? syncCardHtml() : skeletonCard(110);
+    $('#synchost', el).innerHTML = accountsData ? (UxModel.hasFeed(accountsData.sync) ? syncCardHtml() : '') : skeletonCard(110);
     applyDims($('#synchost', el));
     wireSyncCard();
   };
@@ -515,6 +515,11 @@ async function viewAccounts(el, token) {
       drawTop();
       drawAccounts();
       if (accountsData.sync.running) watchSync();
+      // Home's first-run choice lands here with the add form open, and the import offered once the account exists.
+      if (token === renderToken && new URLSearchParams(location.search).get('add')) {
+        history.replaceState({}, '', '/accounts');
+        openManualAccountForm(null, { thenImport: true });
+      }
     } catch (e) {
       if (accountsData) { toast(`Showing saved accounts: ${e.detail}`, { error: true }); return; }
       box.innerHTML = errorCard(e, 'retry', 'your accounts');

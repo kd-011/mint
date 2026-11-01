@@ -16,6 +16,8 @@ import { mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, 
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { zoneDate } from '../lib/dates.mjs';
+import { shotList, DESKTOP_SHOTS } from './shot-list.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DOCS = join(ROOT, 'docs');
@@ -50,18 +52,11 @@ const DESK = { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1, ser
 const squeeze = (file) => { try { execFileSync('convert', [file, '-strip', '-define', 'png:compression-level=9', file]); } catch { /* convert is optional */ } };
 
 // ---- screenshots ----------------------------------------------------------------------------
-const SCREENS = [
-  ['home', '/'],
-  ['transactions', '/transactions'],
-  ['loan', '/transactions?q=loan'],
-  ['plan', '/plan'],
-  ['save', '/save'],
-  ['reports', '/reports'],
-  ['subs', '/plan?s=subs'],
-];
+// The screens live in scripts/shot-list.mjs; test/demo-seed.test.mjs checks that every search in it finds real spending.
+const SCREENS = shotList({ today: zoneDate() });
 async function shots(browser, base) {
   mkdirSync(SHOTS, { recursive: true });
-  for (const [prefix, ctxOpts, names] of [['m', PHONE, SCREENS.map((s) => s[0])], ['d', DESK, ['home', 'transactions', 'loan', 'plan']]]) {
+  for (const [prefix, ctxOpts, names] of [['m', PHONE, SCREENS.map((s) => s[0])], ['d', DESK, DESKTOP_SHOTS]]) {
     const ctx = await browser.newContext(ctxOpts);
     for (const [name, path] of SCREENS.filter((s) => names.includes(s[0]))) {
       const p = await ctx.newPage();
@@ -115,7 +110,7 @@ const SOCIAL = `<html><head>${HEAD}</head><body style="width:1280px;height:640px
 
 const HERO = `<html><head>${HEAD}</head><body style="width:1600px;height:900px;position:relative;overflow:hidden">
 <div class="glow"></div>
-<div class="win" style="left:430px;top:90px;width:1080px"><img src="${shot('d-loan.png')}"></div>
+<div class="win" style="left:430px;top:90px;width:1080px"><img src="${shot('d-groceries.png')}"></div>
 <div class="phone" style="left:70px;top:90px;width:300px;transform:rotate(-3deg)"><img src="${shot('m-home.png')}"></div>
 <div class="phone" style="left:300px;top:250px;width:300px;transform:rotate(2deg)"><img src="${shot('m-plan.png')}"></div>
 </body></html>`;
@@ -136,7 +131,7 @@ async function render(browser, html, { width, height, out, scale = 1 }) {
 }
 
 // ---- the animated demo ----------------------------------------------------------------------------
-// One phone, one real flow: net worth, a search that finds the loan repayment on both legs, the
+// One phone, one real flow: net worth, a search that finds a month of groceries with its total, the
 // pay split plan, a goal. Recorded by Playwright, then cut and palette-squeezed into a GIF.
 async function demoGif(browser, base) {
   const dir = mkdtempSync(join(tmpdir(), 'mint-rec-'));
@@ -151,8 +146,8 @@ async function demoGif(browser, base) {
   await tab('spending').click();
   await p.waitForTimeout(1500);
   await p.locator('#q').click();
-  await p.keyboard.type('loan', { delay: 260 });
-  await p.waitForTimeout(2600); // both legs, $2,130.00
+  await p.keyboard.type('woolworths', { delay: 200 });
+  await p.waitForTimeout(2600); // the rows and the Out total
   await tab('more').click();
   await p.waitForTimeout(1000);
   await p.locator('a[href="/plan"]').first().click();

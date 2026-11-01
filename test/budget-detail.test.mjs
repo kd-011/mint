@@ -13,9 +13,9 @@ import { payBook, refreshMoney, setCat } from './fixtures/pay.mjs';
 import { createApi } from '../lib/api.mjs';
 import { HttpError } from '../lib/errors.mjs';
 import { setBudget } from '../lib/budgets.mjs';
-import { perthDate, addDays } from '../lib/dates.mjs';
+import { zoneDate, addDays } from '../lib/dates.mjs';
 
-const T = perthDate();
+const T = zoneDate();
 const PAYDAYS = [-64, -50, -36, -22, -8].map((n) => addDays(T, n));
 let srv, base, b, groc, fuel;
 

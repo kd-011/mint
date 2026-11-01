@@ -20,16 +20,18 @@
 </p>
 
 <p align="center">
-  <img src="docs/demo.gif" alt="A short tour: net worth on Home, a search for a loan repayment, the pay split plan, a savings goal" width="270">
+  <img src="docs/demo.gif" alt="A short tour: net worth on Home, a search for Woolworths, the pay split plan, a savings goal" width="270">
 </p>
 
 Every figure and name in these images comes from the made-up demo data in `scripts/demo-seed.mjs`. No real account was used.
+
+**Status: early.** Mint is young, has one user so far (its author) and runs that person's own finances. It is usable, but expect rough edges, and read the diff before you upgrade. See [CHANGELOG.md](CHANGELOG.md) and the [known limits](#roadmap-and-known-limits).
 
 ## Why Mint
 
 Most budgeting apps assume a US bank, a calendar month and someone else's server. Mint is built around how an Australian actually gets paid and taxed:
 
-- **It reads Australian banks.** Bank feeds come through [Redbark](https://redbark.com), a commercial aggregator that uses the Consumer Data Right (CDR). Mint keeps its own full copy of the history.
+- **It reads Australian banks, if you want it to.** Live bank feeds come through [Redbark](https://redbark.com), a commercial aggregator that uses the Consumer Data Right (CDR), and Mint keeps its own full copy of the history. Redbark is paid and entirely optional: add accounts by hand and import the CSV statement your bank gives you (CommBank, ANZ, NAB and Westpac layouts are tested, with ING and Macquarie too) and everything else works the same. See [docs/csv-import.md](docs/csv-import.md).
 - **Budgets follow your pay, not the calendar.** A cycle runs from one salary deposit to the day before the next. Mint finds your salary, learns the rhythm and predicts the next payday.
 - **One number: safe to spend.** Expected pay, less your savings split and fixed bills, less what you have spent so far, divided by the days left until payday.
 - **Tax time is already half done.** Tag a transaction as an ATO deduction, attach a receipt photo, export a financial year summary or an accountant pack.
@@ -47,7 +49,7 @@ cd mint
 node scripts/demo-seed.mjs
 ```
 
-Open <http://127.0.0.1:8980/>. This starts a fake Redbark, a throwaway database and the real server, loads a year of invented transactions, budgets, goals, shares and a home loan, and deletes it all when you press Ctrl-C. No Redbark key needed.
+Open <http://127.0.0.1:8980/>. This starts a fake Redbark, a throwaway database and the real server, loads a year of invented transactions, budgets, goals, shares, a manual account and a home loan, and deletes it all when you press Ctrl-C. No Redbark key needed.
 
 With Docker instead:
 
@@ -73,7 +75,7 @@ Then open <http://127.0.0.1:8980/> (use `127.0.0.1`, not `localhost`). Details, 
 </p>
 
 **Banks and balances**
-- Every account Redbark can see, plus accounts it cannot, entered by hand in any currency with CSV statement import
+- Every account Redbark can see, plus accounts it cannot, entered by hand in any currency with CSV statement import (on its own, with no Redbark at all, if you prefer)
 - Net worth across cash, cards, loans, shares, property and super; live ASX and US share prices
 - Transfers between your own accounts are matched so they do not count as spending, and card and loan repayments are recognised
 - Wise balances (optional)
@@ -126,21 +128,23 @@ What the others do that Mint does not: more than one user, many countries, matur
 
 ## Setup for your own book
 
-Mint needs a Redbark account with API access, and a reverse proxy that logs you in. Both are covered step by step:
+Mint needs a reverse proxy that logs you in, and one of two ways to get your transactions in. Everything is covered step by step:
 
-- [docs/redbark-setup.md](docs/redbark-setup.md): get an API key and connect your banks
 - [docs/self-hosting.md](docs/self-hosting.md): the login gateway, Caddy with Authelia, Tailscale, Cloudflare, Docker, systemd
+- Without Redbark: [docs/csv-import.md](docs/csv-import.md). Leave `REDBARK_API_KEY` unset, add an account by hand on the first screen and import a CSV statement from your bank's website. Nothing is polled and the app shows no Redbark messages. You give up automatic updates, not the budgets, pay cycles, search, tax tags or net worth.
+- With Redbark: [docs/redbark-setup.md](docs/redbark-setup.md) covers getting an API key (a paid plan) and connecting your banks.
 
 The short version:
 
 ```sh
 cp .env.example .env
 chmod 600 .env
-# fill in REDBARK_API_KEY, MINT_GATE_KEY (openssl rand -hex 32), MINT_USER and MINT_ORIGIN
+# fill in MINT_GATE_KEY (openssl rand -hex 32), MINT_USER and MINT_ORIGIN,
+# and REDBARK_API_KEY if you have one; MINT_TZ if you are not on Perth time
 node server.mjs
 ```
 
-Mint listens on `127.0.0.1:8970` only. The first start backfills each account (up to about seven years where the bank allows), then polls every 30 minutes with a full reconcile at 02:40 Perth time. It will not answer anyone who does not arrive through your login gateway, so read the self-hosting page before you open it in a browser.
+Mint listens on `127.0.0.1:8970` only. With a Redbark key, the first start backfills each account (up to about seven years where the bank allows), then polls every 30 minutes with a full reconcile at 02:40 in your timezone. It will not answer anyone who does not arrive through your login gateway, so read the self-hosting page before you open it in a browser.
 
 ### Configuration
 
@@ -148,8 +152,9 @@ Everything is an environment variable, read from `.env` next to `server.mjs` or 
 
 | Variable | What it does |
 | --- | --- |
-| `REDBARK_API_KEY` | Required. Your Redbark key. |
+| `REDBARK_API_KEY` | Optional. Your Redbark key. Unset, there is no bank feed: manual accounts and CSV import only. |
 | `MINT_GATE_KEY` | Required. Shared secret your proxy sends as `X-Mint-Gate` (32+ characters). |
+| `MINT_TZ` | Your timezone as an IANA name, for example `Australia/Sydney`. Default `Australia/Perth`. See [Timezone](docs/self-hosting.md#timezone). |
 | `MINT_USER` | Login name your proxy sends as `Remote-User`. Default `owner`. |
 | `MINT_ORIGIN` | The https origin you serve Mint from. Default `http://localhost:<port>`. |
 | `MINT_PORT` | Listen port on 127.0.0.1. Default 8970. |
@@ -186,7 +191,9 @@ Your data is `data/mint.db` plus `data/receipts/`.
 
 **Does it move money?** No. The Redbark client only reads. Mint checks whether the transfers you made match your plan; it cannot make them.
 
-**Does it work outside Australia?** The feed is Australian (CDR). You can run it on manual accounts and CSV imports anywhere, but schedules and day boundaries are fixed to Perth time and the tax parts are ATO only.
+**Does it work outside Australia?** The bank feed is Australian (CDR). On manual accounts and CSV imports it runs anywhere, in any currency, and day boundaries, pay cycles and schedules follow whatever IANA zone you set in `MINT_TZ` (default `Australia/Perth`, so a plain install behaves as it always did). The tax parts are ATO only, and the financial year starts on 1 July.
+
+**Do I need Redbark?** No. Without it you add accounts by hand and import CSV statements, see [docs/csv-import.md](docs/csv-import.md). The CSV column layouts for the big banks are the ones widely reported for each, not confirmed by the banks, and Mint shows you what it read before it saves anything.
 
 **Is Redbark free?** No. It is a separate commercial service with its own terms. At the time of writing, API access needs a paid plan after a short trial; see [docs/redbark-setup.md](docs/redbark-setup.md) for what was verified and when. Mint has no financial interest in it.
 
@@ -194,9 +201,10 @@ Your data is `data/mint.db` plus `data/receipts/`.
 
 Honest list, roughly in order of how much it matters:
 
-- **Perth time only.** Day boundaries and schedules are fixed in `lib/dates.mjs`. Other zones need a small code change.
+- **One timezone per install.** Set `MINT_TZ` before the first sync. Changing it later does not rewrite old dates, only how new days are bucketed.
 - **Single user.** One person, one book. There are no shared budgets or roles and none are planned.
-- **Redbark is required for live bank feeds**, and it is a paid third party. Manual accounts and CSV import work without it.
+- **Live bank feeds need Redbark**, a paid third party. Without it you import CSV statements by hand, and there is no automatic update.
+- **CSV layouts are unconfirmed.** The banks do not publish theirs, so the tested shapes come from what is widely reported. Mint shows its column choices before it imports.
 - **CDR consent lapses after 12 months** and has to be renewed inside Redbark. Mint warns you before it does.
 - **No store listing for the Android app.** You build and sign the shell yourself.
 - **Young code.** It runs the maintainer's own finances, but few other people have used it. Expect rough edges and read the diff before upgrading.

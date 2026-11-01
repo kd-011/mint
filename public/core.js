@@ -42,8 +42,13 @@ function compact(cents) {
   return `${shown < 0 ? '-' : ''}$${s}`;
 }
 const dmy = (iso) => (iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}` : '');
-const PERTH = new Intl.DateTimeFormat('en-CA', { timeZone: 'Australia/Perth', year: 'numeric', month: '2-digit', day: '2-digit' });
-const todayIso = () => PERTH.format(new Date());
+// The server's MINT_TZ zone, stamped into this file when the shell is served, so every date here is the server's day, not the
+// device's, and the cached shell keeps the same zone offline. Unstamped (a raw checkout) it falls back to the device zone.
+const MINT_TZ = '__TZ__';
+const ZONE = MINT_TZ.startsWith('__') ? undefined : MINT_TZ;
+const ZONE_DATE = new Intl.DateTimeFormat('en-CA', { timeZone: ZONE, year: 'numeric', month: '2-digit', day: '2-digit' });
+const zoneClock = (ts) => new Date(ts).toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', timeZone: ZONE });
+const todayIso = () => ZONE_DATE.format(new Date());
 const isoOffset = (iso, n) => { const d = new Date(`${iso}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const MONTHS_LONG = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -63,7 +68,7 @@ function ago(ts) {
   if (s < 60) return 'just now';
   if (s < 3600) return `${Math.floor(s / 60)} min ago`;
   if (s < 86400) return `${Math.floor(s / 3600)} h ago`;
-  return dmy(PERTH.format(new Date(ts)));
+  return dmy(ZONE_DATE.format(new Date(ts)));
 }
 function inDays(iso) {
   const n = Math.round((Date.parse(`${iso}T00:00:00Z`) - Date.parse(`${todayIso()}T00:00:00Z`)) / 86400000);

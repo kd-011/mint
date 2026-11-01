@@ -106,7 +106,7 @@ function manualBlockHtml(d) {
   const archived = d.archived ?? [];
   const add = `<button class="btn ghost wide mt10" type="button" id="manadd">${I.plus}Add an account by hand</button>`;
   return `<h2>Manual</h2>${mine.length ? `<div class="rows">${mine.map(manualRowHtml).join('')}</div>${add}`
-    : `<div class="card">${emptyState({ icon: I.wallet, title: 'Accounts Redbark cannot see', line: d.sync?.wise?.enabled ? 'Your Wise currencies appear here after the next sync. For an overseas bank or a travel card, add it by hand in its own currency, then type in or import its transactions.' : 'Wise, an overseas bank or a travel card: add it by hand in its own currency, then type in or import its transactions.', button: { id: 'manadd', label: 'Add an account', icon: I.plus } })}</div>`}
+    : `<div class="card">${emptyState({ icon: I.wallet, title: d.sync?.redbark ? 'Accounts Redbark cannot see' : 'No accounts yet', line: !d.sync?.redbark && !d.sync?.wise?.enabled ? 'Type in a balance and transactions, or import a CSV statement from your bank.' : d.sync?.wise?.enabled ? 'Your Wise currencies appear here after the next sync. For an overseas bank or a travel card, add it by hand in its own currency, then type in or import its transactions.' : 'Wise, an overseas bank or a travel card: add it by hand in its own currency, then type in or import its transactions.', button: { id: 'manadd', label: 'Add an account', icon: I.plus } })}</div>`}
     ${archived.length ? `<div class="rlabel mt10">Archived</div><div class="rows">${archived.map((a) => `<div class="row"><div class="main"><div class="t1">${esc(acctText(a.nickname || a.name))}</div><div class="t2">${esc([a.institution, a.currency].filter(Boolean).join(' · '))}</div></div><button class="btn ghost" type="button" data-munarch="${esc(a.id)}">Bring back</button></div>`).join('')}</div>` : ''}`;
 }
 
@@ -139,7 +139,7 @@ async function manualChanged() {
 
 // ---------- add or edit an account ----------
 
-function openManualAccountForm(a = null) {
+function openManualAccountForm(a = null, { thenImport = false } = {}) {
   let cur = a?.currency ?? 'AUD';
   const today = todayIso();
   const panel = openSheet(`${sheetHead(a ? 'Edit' : 'Add by hand', a ? accountName(a) : 'New account')}
@@ -180,6 +180,7 @@ function openManualAccountForm(a = null) {
     e.preventDefault();
     if (![checkName(), checkOb(), checkOd()].every(Boolean)) return;
     formError(form, null);
+    let newId = null;
     const body = {
       name: name.value.trim(), institution: $('#mi', form).value.trim() || null, type: type() ?? a?.type ?? 'transaction',
       opening_balance: ob.value.trim() ? parseMoney(ob.value) : 0, opening_date: od.value,
@@ -193,6 +194,7 @@ function openManualAccountForm(a = null) {
       } else {
         const id = manHex('man');
         const full = { ...body, id, currency: cur, is_business: biz?.() === 'biz' };
+        newId = id;
         const r = await withBusy($('button[type=submit]', form), 'Adding, fetching the rate', () => mutate({ method: 'POST', path: '/api/manual/accounts', body: full }));
         d.clear();
         closeSheet();
@@ -204,7 +206,9 @@ function openManualAccountForm(a = null) {
         } else toast(`Added ${full.name}`);
       }
       buzz(12);
-      manualChanged();
+      const done = manualChanged();
+      // Coming from Home's first-run choice: the account is there, so go straight to its CSV import.
+      if (thenImport && !a) done.then(() => { const made = acctById(newId); if (made) openImport(made, manualChanged); });
     } catch (err) {
       if (err.status === 400 && /name/.test(err.detail)) fieldError(name, err.detail.replace(/^400 /, ''));
       else formError(form, err, a ? 'Save' : 'Add it');
@@ -244,7 +248,7 @@ async function openManualAccount(id) {
       ${!online ? '<div class="sub">Offline: importing needs a connection. Adding a transaction still works and syncs later.</div>' : ''}
       <dl class="kv">${rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
       <p><a class="btn ghost wide" href="/transactions?account=${encodeURIComponent(a.id)}" data-nav>${I.list}Transactions</a></p>
-      ${imports.length ? `<h2>Imports</h2><div class="rows">${imports.slice(0, 8).map((i) => `<div class="row"><div class="main"><div class="t1">${esc(i.file_name || 'CSV import')}</div><div class="t2">${esc(dmy(PERTH.format(new Date(i.created_at))))} · ${esc(plural(i.rows, 'row'))}${i.from_date ? ` · ${esc(dmy(i.from_date))} to ${esc(dmy(i.to_date))}` : ''}${i.undone_at ? ' · undone' : ''}</div></div>${i.undone_at ? '' : `<button class="btn ghost danger-text" type="button" data-mundo="${i.id}" title="Remove the rows this import added">Undo import</button>`}</div>`).join('')}</div>` : ''}
+      ${imports.length ? `<h2>Imports</h2><div class="rows">${imports.slice(0, 8).map((i) => `<div class="row"><div class="main"><div class="t1">${esc(i.file_name || 'CSV import')}</div><div class="t2">${esc(dmy(ZONE_DATE.format(new Date(i.created_at))))} · ${esc(plural(i.rows, 'row'))}${i.from_date ? ` · ${esc(dmy(i.from_date))} to ${esc(dmy(i.to_date))}` : ''}${i.undone_at ? ' · undone' : ''}</div></div>${i.undone_at ? '' : `<button class="btn ghost danger-text" type="button" data-mundo="${i.id}" title="Remove the rows this import added">Undo import</button>`}</div>`).join('')}</div>` : ''}
       <button class="btn ghost wide mt10" type="button" id="medit">${I.edit}Edit details</button>
       <button class="btn ghost wide mt10" type="button" id="march">${I.download}Archive</button>
       <button class="btn danger wide mt10" type="button" id="mdel">${I.trash}Delete account</button>`;
@@ -440,8 +444,7 @@ function openImport(a, done) {
         <div class="stat"><div class="k">Can't read</div><div class="v num ${p.counts.failed ? 'warnc' : ''}">${p.counts.failed.toLocaleString('en-AU')}</div></div>
       </div>
       ${p.incomplete ? '<p class="sub warnc">Pick the date, description and amount columns to see the rows.</p>' : ''}
-      ${p.sample.length ? `<h2>First rows</h2><div class="tbl-wrap"><table class="tbl"><thead><tr><th scope="col">Row</th><th scope="col">Date</th><th scope="col">Description</th><th scope="col" class="r">Amount</th></tr></thead>
-        <tbody>${p.sample.map((r) => `<tr class="${r.duplicate ? 'dim' : ''}"><td class="num">${r.row}</td><td>${esc(dmy(r.date))}</td><td>${esc(r.description)}${r.duplicate ? ' <span class="chip">Already in Mint</span>' : ''}</td><td class="r num">${esc(signedIn(r.amount, a.currency))}</td></tr>`).join('')}</tbody></table></div>` : ''}
+      ${p.sample.length ? `<h2>First rows</h2><div class="rows imp-rows">${p.sample.map((r) => `<div class="row ${r.duplicate ? 'dim' : ''}"><div class="main"><div class="t1">${esc(r.description)}</div><div class="t2">${esc(dmy(r.date))} · row ${r.row}${r.duplicate ? ' · already in Mint' : ''}</div></div><div class="amt num ${r.amount < 0 ? 'neg-red' : ''}">${esc(signedIn(r.amount, a.currency))}</div></div>`).join('')}</div>` : ''}
       ${p.failures.length ? `<h2>Rows Mint can't read</h2><div class="rows">${p.failures.slice(0, 20).map((f) => `<div class="row"><div class="main"><div class="t1">Row ${f.row}</div><div class="t2 wrap">${esc(f.reason)}</div></div></div>`).join('')}</div>${p.failures.length > 20 || p.counts.failed > p.failures.length ? `<p class="sub">And ${plural(p.counts.failed - 20, 'more row')}.</p>` : ''}<p class="sub">These are left out. Fix them in the file and import it again: rows already in Mint are skipped.</p>` : ''}
       <h2>Columns and dates</h2>
       <div class="field"><label>Amounts are in</label>${segmented('imamt', [['one', 'One column'], ['two', 'Out and in columns']], twoCols ? 'two' : 'one')}</div>

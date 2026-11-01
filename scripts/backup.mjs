@@ -14,6 +14,7 @@ import { spawnSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadEnv } from '../lib/env.mjs';
+import { zoneDate } from '../lib/dates.mjs';
 import { encryptFile, mirrorEncrypted, validRecipient } from '../lib/backupcrypt.mjs';
 
 process.umask(0o077);
@@ -32,7 +33,7 @@ const run = (cmd, args) => {
 
 const backups = join(ROOT, 'backups');
 mkdirSync(backups, { recursive: true, mode: 0o700 });
-const stamp = new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Perth' });
+const stamp = zoneDate();
 const target = join(backups, `mint-${stamp}.db`);
 try { unlinkSync(target); } catch {}
 const db = new DatabaseSync(join(ROOT, 'data', 'mint.db'), { readOnly: true });

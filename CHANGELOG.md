@@ -1,0 +1,33 @@
+# Changelog
+
+All notable changes to Mint are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/) once Mint leaves 0.x: until then, read the entry before you upgrade.
+
+## [Unreleased]
+
+### Added
+- Timezone support. `MINT_TZ` takes any IANA zone name (default `Australia/Perth`, so an install that sets nothing behaves as before). Days, pay cycles, the financial year, the nightly reconcile, alert dates and exported dates all follow it, and the browser formats dates in the same zone. A misspelt name stops Mint at start with a message that names the variable. See [Timezone](docs/self-hosting.md#timezone).
+- A first-class path without Redbark. With `REDBARK_API_KEY` unset there is no poll, no nightly job and no Redbark wording in the app. A fresh book offers "Add an account and import a CSV" on its first screen.
+- CSV statement import ([docs/csv-import.md](docs/csv-import.md)): delimiter, header row, signed or debit/credit amounts, date order and encoding are detected and shown in a preview before anything is saved. Layouts for CommBank, ANZ, NAB, Westpac, ING and Macquarie are tested against invented fixtures. Re-importing the same rows adds nothing, and an import is one undoable step.
+- Manual accounts in any currency, with a balance adjustment offered when a statement's closing balance differs from Mint's.
+- `scripts/export-public.mjs` updates a persistent public checkout with one new commit on top instead of writing a fresh single-commit repo each time. `--fresh` keeps the old behaviour. See [docs/maintainers.md](docs/maintainers.md).
+
+### Changed
+- The demo (`node scripts/demo-seed.mjs`) is richer: a year of invented transactions, a home loan with a repayment plan, goals, shares, subscriptions and a manual account, with balances on every account. The README banner, hero, demo GIF and screenshots are regenerated from it, and contain no real data.
+- README: the known limits, FAQ and setup now describe `MINT_TZ` and the no-Redbark path.
+
+## [0.1.0] - 2026-11-01
+
+First public release, published as a scrubbed one-commit export of a private working repository.
+
+- Pay-cycle budgets found from salary deposits, with rollover, and a "safe to spend until payday" figure.
+- A pay split plan with a check that each payday's transfers happened.
+- Bank feeds through Redbark (CDR): backfill, a 30 minute poll, a nightly reconcile and webhooks.
+- Net worth across cash, cards, loans, shares, property and super; live ASX and US share prices; a home loan and offset view; savings goals.
+- Search, saved views, merchant rules and an optional model pass for merchants it cannot place.
+- Subscriptions and bills detected from history, with price rise and unusual charge alerts.
+- ATO deduction tags, receipt photos, a financial year export, an accountant pack and a return estimate.
+- A progressive web app with offline reads and queued edits, a passkey lock, encrypted off-box backups with a restore test, and an optional Android shell.
+- Zero npm dependencies, Node 22, one SQLite file. AGPL-3.0.
+
+[Unreleased]: https://github.com/kd-011/mint/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/kd-011/mint/releases/tag/v0.1.0

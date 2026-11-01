@@ -57,10 +57,13 @@ const H = { 'remote-user': 'owner', 'x-mint-gate': GATE_KEY };
 const get = (path, headers = H) => fetch(base + path, { headers });
 const send = (method, path, body, headers = {}) => fetch(base + path, { method, headers: { ...H, 'content-type': 'application/json', ...headers }, body: typeof body === 'string' ? body : JSON.stringify(body) });
 
-test('refuses to start without the Redbark key', async () => {
+test('starts without the Redbark key: the bank feed is optional (manual accounts and CSV import work without it)', async () => {
   const s = await start({ MINT_HOME: mkdtempSync(join(tmpdir(), 'mint-noenv-')), MINT_PORT: '0', MINT_GATE_KEY: GATE_KEY, MINT_SCHEDULER: 'off', MINT_LOCK: 'off' });
-  assert.notEqual(s.code, 0);
-  assert.match(s.out(), /REDBARK_API_KEY/);
+  try {
+    assert.ok(s.url, s.out());
+    await new Promise((r) => setTimeout(r, 300)); // the start-up notes follow the listening line
+    assert.match(s.out(), /bank feed is off/);
+  } finally { s.p.kill('SIGTERM'); }
 });
 
 test('data and API routes need the gate identity', async () => {

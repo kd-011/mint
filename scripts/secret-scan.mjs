@@ -27,6 +27,12 @@ import { fileURLToPath } from 'node:url';
 
 export const ALLOW_MARKER = 'scan-allow';
 
+// Kinds that are expected, and allowed, in a given place. The CSV import fixtures hold invented
+// bank layouts (BSB and account columns) that cannot carry an inline marker without breaking the
+// file they exist to exercise.
+const ALLOWED_KINDS = [[/^test\/fixtures\/csv\//, new Set(['BSB and account'])]];
+const allowedHere = (file, kind) => ALLOWED_KINDS.some(([re, kinds]) => re.test(file) && kinds.has(kind));
+
 // Never published, whatever they contain. Matched against the path relative to the scan root.
 export const FORBIDDEN_PATHS = [
   /(^|\/)\.env($|\.(?!example$))/, // .env, .env.local, .env.production (not .env.example)
@@ -131,31 +137,15 @@ export function scanTree(root, { deny = [], tracked = false } = {}) {
     if (BINARY_EXT.has(extname(abs).toLowerCase()) || statSync(abs).size > 3_000_000) continue;
     const buf = readFileSync(abs);
     if (buf.includes(0)) continue;
-    for (const f of scanText(buf.toString('utf8'), { deny })) out.push({ file: rel, ...f });
+    for (const f of scanText(buf.toString('utf8'), { deny })) if (!allowedHere(rel, f.kind)) out.push({ file: rel, ...f });
     for (const d of deny) if (denyHit(rel, d)) out.push({ file: rel, line: 0, kind: 'denylisted string (in path)' });
   }
   return out;
 }
 
-/** Sweep every added line and every filename in a repo's whole history. */
-export function scanHistory(repo, { deny = [] } = {}) {
-  const git = (...a) => execFileSync('git', ['-C', repo, ...a], { encoding: 'utf8', maxBuffer: 1 << 30 });
+// Added lines of a unified diff, scanned one by one. `commit` tags findings when the patch spans commits.
+function scanPatch(patch, deny) {
   const out = [];
-  const names = new Set(git('log', '--all', '--name-only', '--format=').split('\n').filter(Boolean));
-  for (const n of names) {
-    const bad = pathProblem(n);
-    if (bad) out.push({ file: n, line: 0, kind: `${bad} (in history)` });
-  }
-  // who made each commit and what they said: names and emails live here, not in any file
-  for (const c of git('log', '--all', '--format=%H%x1f%an <%ae>%x1f%cn <%ce>%x1f%B%x1e').split('\x1e')) {
-    const [hash, author, committer, message] = c.trim().split('\x1f');
-    if (!hash) continue;
-    const at = hash.slice(0, 7);
-    for (const [what, text] of [['author', author], ['committer', committer], ['message', message ?? '']]) {
-      for (const f of scanText(text, { deny })) out.push({ file: `commit ${what}@${at}`, line: f.line, kind: f.kind });
-    }
-  }
-  const patch = git('log', '--all', '-p', '--no-color', '--format=commit %h', '--', '.', ':(exclude)*.png', ':(exclude)*.jpg', ':(exclude)*.woff2', ':(exclude)package-lock.json');
   let commit = '', file = '', n = 0;
   for (const l of patch.split('\n')) {
     if (l.startsWith('commit ')) { commit = l.slice(7); continue; }
@@ -163,8 +153,49 @@ export function scanHistory(repo, { deny = [] } = {}) {
     if (l.startsWith('@@')) { n = Number(/\+(\d+)/.exec(l)?.[1] ?? 0) - 1; continue; }
     if (!l.startsWith('+') || l.startsWith('+++')) continue;
     n++;
-    for (const f of scanText(l.slice(1), { deny })) out.push({ file: `${file}@${commit}`, line: n, kind: f.kind });
+    for (const f of scanText(l.slice(1), { deny })) if (!allowedHere(file, f.kind)) out.push({ file: commit ? `${file}@${commit}` : file, line: n, kind: f.kind });
   }
+  return out;
+}
+
+const PATCH_EXCLUDES = ['--', '.', ':(exclude)*.png', ':(exclude)*.jpg', ':(exclude)*.woff2', ':(exclude)package-lock.json'];
+
+/**
+ * Sweep every added line and every filename in a repo's history: all of it, or only the commits in
+ * `range` (for example `origin/main..HEAD`, the commits about to be published).
+ */
+export function scanHistory(repo, { deny = [], range = null } = {}) {
+  const git = (...a) => execFileSync('git', ['-C', repo, ...a], { encoding: 'utf8', maxBuffer: 1 << 30 });
+  const revs = range ? [range] : ['--all'];
+  const out = [];
+  const names = new Set(git('log', ...revs, '--name-only', '--format=').split('\n').filter(Boolean));
+  for (const n of names) {
+    const bad = pathProblem(n);
+    if (bad) out.push({ file: n, line: 0, kind: `${bad} (in history)` });
+  }
+  // who made each commit and what they said: names and emails live here, not in any file
+  for (const c of git('log', ...revs, '--format=%H%x1f%an <%ae>%x1f%cn <%ce>%x1f%B%x1e').split('\x1e')) {
+    const [hash, author, committer, message] = c.trim().split('\x1f');
+    if (!hash) continue;
+    const at = hash.slice(0, 7);
+    for (const [what, text] of [['author', author], ['committer', committer], ['message', message ?? '']]) {
+      for (const f of scanText(text, { deny })) out.push({ file: `commit ${what}@${at}`, line: f.line, kind: f.kind });
+    }
+  }
+  out.push(...scanPatch(git('log', ...revs, '-p', '--no-color', '--format=commit %h', ...PATCH_EXCLUDES), deny));
+  return out;
+}
+
+/** Sweep what is staged in `repo` against HEAD: every added line, and the name of every changed file. */
+export function scanStagedDiff(repo, { deny = [] } = {}) {
+  const git = (...a) => execFileSync('git', ['-C', repo, ...a], { encoding: 'utf8', maxBuffer: 1 << 30 });
+  const out = [];
+  for (const n of git('diff', '--cached', '--name-only', '-z', 'HEAD').split('\0').filter(Boolean)) {
+    const bad = pathProblem(n);
+    if (bad) out.push({ file: n, line: 0, kind: `${bad} (in diff)` });
+    for (const d of deny) if (denyHit(n, d)) out.push({ file: n, line: 0, kind: 'denylisted string (in path)' });
+  }
+  out.push(...scanPatch(git('diff', '--cached', '--no-color', '--unified=0', 'HEAD', ...PATCH_EXCLUDES), deny));
   return out;
 }
 

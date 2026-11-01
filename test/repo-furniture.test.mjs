@@ -45,6 +45,7 @@ test('the GitHub furniture is there and points at real paths', () => {
   const ci = read('.github/workflows/ci.yml');
   assert.match(ci, /node-version: 22/);
   assert.match(ci, /node --test test\//);
+  assert.match(ci, /apt-get install -y -qq age/, 'the backup tests need the age binaries on the runner');
   assert.match(ci, /secret-scan\.mjs \. --tracked/);
   const dep = read('.github/dependabot.yml');
   assert.match(dep, /package-ecosystem: npm\n\s+directory: \/android-shell/);

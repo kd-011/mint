@@ -1311,11 +1311,13 @@ a.stat{display:block;min-height:var(--tap)}
 .set-row .btn{flex:none}
 .set-note{margin:10px 0 0;padding-top:10px;border-top:1px solid var(--line-soft);font-size:var(--fs-sm)}
 .qactions.n4{grid-template-columns:repeat(4,minmax(0,1fr))}
-@media (min-width:1024px){.qactions.n4{grid-template-columns:repeat(4,88px)}}
+.qactions.n3{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (min-width:1024px){.qactions.n4{grid-template-columns:repeat(4,88px)}.qactions.n3{grid-template-columns:repeat(3,88px)}}
 /* Manual accounts: the CSV file picker and the import counts (public/manual.js). */
 .import-drop{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;padding:28px 20px;cursor:pointer;min-height:44px;transition:transform var(--dur-1) var(--spring)}
 .import-drop svg{width:28px;height:28px;color:var(--ink-2)}
 .import-drop:active{transform:scale(var(--press))}
+.imp-rows .t1{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .imp-counts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px}
 .tbl tr.dim td{color:var(--ink-3)}
 .tx .flags .aud{margin-right:4px}

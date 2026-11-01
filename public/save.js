@@ -327,7 +327,7 @@ async function saveLoan(box, token, charts) {
     if (token !== renderToken || !data) return;
     box.innerHTML = data.items.length
       ? data.items.map((l, i) => homeLoanCard(l, extra, i === 0)).join('')
-      : `<div class="card">${emptyState({ icon: I.house, title: 'No home loan connected', line: 'Connect your loan in Redbark.', action: { href: '/accounts', label: 'Accounts and sync' } })}</div>`;
+      : `<div class="card">${emptyState({ icon: I.house, title: 'No home loan connected', line: accountsData?.sync?.redbark ? 'Connect your loan in Redbark.' : 'Add your loan as an account.', action: accountsData?.sync?.redbark ? { href: '/accounts', label: 'Accounts and sync' } : { href: '/accounts?add=1', label: 'Add an account' } })}</div>`;
     applyDims(box);
     charts.innerHTML = data.items.length ? chartCard({ id: 'sv-loanchart', title: 'Loan balance over time' }) : '';
     if (data.items.length) { drawChart(data.items[0]); wireCharts(charts); wire(); }

@@ -44,4 +44,4 @@ Without a webhook Mint polls every 30 minutes, which is fine. If you want near-i
 
 ## No Redbark?
 
-Mint still runs: add accounts by hand in any currency and import CSV statements. There is no other live bank feed. `node scripts/demo-seed.mjs` runs the whole app on invented data with no key.
+Leave `REDBARK_API_KEY` unset and Mint still runs: it says once at start-up that the bank feed is off, keeps the 30 minute poll and the nightly reconcile off, and never shows a Redbark prompt. Add accounts by hand in any currency and import CSV statements: see [csv-import.md](csv-import.md). There is no other live bank feed. `node scripts/demo-seed.mjs` runs the whole app on invented data with no key.

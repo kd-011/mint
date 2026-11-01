@@ -452,7 +452,7 @@ async function planDebt(box, token) {
           ${cp.mode === 'date' ? `<div class="field"><label for="cpdate">Clear it by</label><input id="cpdate" type="date" min="${isoOffset(todayIso(), 1)}" value="${esc(cp.date)}"></div>`
             : `<div class="field"><label for="cpamt">Pay each pay cycle</label><div class="money-in"><span>$</span><input id="cpamt" inputmode="decimal" autocomplete="off" value="${cp.cycle ? centsToInput(cp.cycle) : ''}"></div></div>`}</section>
         ${debt.cards.map((c) => cardCard(c, cp)).join('')}` : ''}
-      ${!debt.loans.length && !debt.cards.length ? `<div class="card">${emptyState({ icon: I.house, title: 'No loans or cards', line: 'Connect a loan or card in Redbark.', action: { href: '/accounts', label: 'Accounts and sync' } })}</div>` : ''}
+      ${!debt.loans.length && !debt.cards.length ? `<div class="card">${emptyState({ icon: I.house, title: 'No loans or cards', line: accountsData?.sync?.redbark ? 'Connect a loan or card in Redbark.' : 'Add a loan or card as an account.', action: accountsData?.sync?.redbark ? { href: '/accounts', label: 'Accounts and sync' } : { href: '/accounts?add=1', label: 'Add an account' } })}</div>` : ''}
 `;
     applyDims(box);
     wire();

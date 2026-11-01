@@ -63,8 +63,8 @@ const UxModel = (() => {
   }
 
   // What the palette shows without the server: actions and screens that match. A touch screen has no shortcuts to list.
-  function matchStatic(q, { desktop = true, screens = 6 } = {}) {
-    const actions = ACTIONS.filter((a) => desktop || !a.desktopOnly);
+  function matchStatic(q, { desktop = true, screens = 6, feed = true } = {}) {
+    const actions = ACTIONS.filter((a) => (desktop || !a.desktopOnly) && (feed || a.id !== 'sync'));
     const empty = !tokens(q).length;
     return { actions: rank(actions, q, 6), screens: rank(SCREENS, q, empty ? screens : 6) };
   }
@@ -226,7 +226,24 @@ const UxModel = (() => {
   const budgetHref = (categoryId, cycle = null) => `/budgets?cat=${encodeURIComponent(categoryId)}${cycle ? `&cycle=${encodeURIComponent(cycle)}` : ''}`;
 
   // The tiles under the Home hero: the jobs done most. href tiles navigate, act tiles are run by the page.
-  function homeActions({ uncategorised = 0, online = true, syncRunning = false } = {}) {
+  // A bank feed is Redbark (a key is set on the server) or Wise. Without either there is nothing to sync, so nothing offers to.
+  const hasFeed = (sync) => !sync || !!sync.redbark || !!sync.wise?.enabled;
+
+  // What Home offers when there is not one account yet. Without a bank feed that is two choices: the paid CDR route, or an
+  // account of your own and a CSV statement. With the key set the banks arrive on the first sync, so the one choice is to run it.
+  const REDBARK_DOCS = 'https://github.com/kd-011/mint/blob/main/docs/redbark-setup.md';
+  function firstRun({ redbark = false } = {}) {
+    if (redbark) return { title: 'No accounts yet', choices: [{ id: 'sync', label: 'Sync now', act: 'sync' }] };
+    return {
+      title: 'Add your first account',
+      choices: [
+        { id: 'redbark', label: 'Connect banks with Redbark', line: 'A paid CDR service', href: REDBARK_DOCS, external: true, icon: 'bank' },
+        { id: 'csv', label: 'Add an account and import a CSV', href: '/accounts?add=1', icon: 'file' },
+      ],
+    };
+  }
+
+  function homeActions({ uncategorised = 0, online = true, syncRunning = false, feed = true } = {}) {
     const fix = { id: 'fix', label: 'Sort', icon: 'tag', href: uncategorised ? '/transactions?category=none' : '/transactions' };
     if (uncategorised > 0) fix.badge = compactCount(uncategorised);
     const sync = { id: 'sync', label: syncRunning ? 'Syncing' : 'Sync', icon: 'refresh', act: 'sync' };
@@ -237,7 +254,7 @@ const UxModel = (() => {
       { id: 'budgets', label: 'Budgets', icon: 'target', href: '/budgets' },
       { id: 'owed', label: 'Ledger', icon: 'user', href: '/owed?add=1' },
       { id: 'ask', label: 'Ask', icon: 'chat', act: 'chat' },
-      sync,
+      ...(feed ? [sync] : []),
     ];
   }
 
@@ -784,7 +801,7 @@ const UxModel = (() => {
     return name || fallback;
   }
 
-  return { TICK_FIRST_MS, TICK_MS, tickValue, tickPlan, SCREENS, ACTIONS, SHORTCUTS, SYNC_PHASES, PULL_MARK, FILTER_KEYS, score, matchStatic, pushRecent, sameFilters, hasFilters, categoryGroups, accountGroups, keyAction, nextIndex, syncSteps, pull, changeWord, moverText, moverHref, merchantHref, filenameFrom, compactCount, shortAgo, budgetHref, homeActions, cycleSummary, categoryRows, balanceTiles, accountRows, bankName, accountHref, accountTransactionsHref, accountRulesHref, accountTypeWord, accountStatus, accountFacts, accountGaps, gapLine, accountRules, rulesLine, moveRow, orderIds, showViewsRow, pushRecentCat, suggestCategories, countsInTotals, accountShort, txSubline, txRowFlags, txSummary, summaryParts, goalsOverview, goalStatus, goalWords, goalRowWords, GOAL_STATUS, addMonthsIso, monthsWords, dateWords };
+  return { TICK_FIRST_MS, TICK_MS, tickValue, tickPlan, SCREENS, ACTIONS, SHORTCUTS, SYNC_PHASES, PULL_MARK, FILTER_KEYS, score, matchStatic, pushRecent, sameFilters, hasFilters, categoryGroups, accountGroups, keyAction, nextIndex, syncSteps, pull, changeWord, moverText, moverHref, merchantHref, filenameFrom, compactCount, shortAgo, budgetHref, hasFeed, firstRun, homeActions, cycleSummary, categoryRows, balanceTiles, accountRows, bankName, accountHref, accountTransactionsHref, accountRulesHref, accountTypeWord, accountStatus, accountFacts, accountGaps, gapLine, accountRules, rulesLine, moveRow, orderIds, showViewsRow, pushRecentCat, suggestCategories, countsInTotals, accountShort, txSubline, txRowFlags, txSummary, summaryParts, goalsOverview, goalStatus, goalWords, goalRowWords, GOAL_STATUS, addMonthsIso, monthsWords, dateWords };
 })();
 
 if (typeof module !== 'undefined' && module.exports) module.exports = { UxModel };

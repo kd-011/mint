@@ -12,9 +12,9 @@ import { join } from 'node:path';
 import { book } from './fixtures/book.mjs';
 import { createApi } from '../lib/api.mjs';
 import { HttpError } from '../lib/errors.mjs';
-import { perthDate, addDays } from '../lib/dates.mjs';
+import { zoneDate, addDays } from '../lib/dates.mjs';
 
-const T = perthDate();
+const T = zoneDate();
 let srv, base, b;
 
 before(async () => {

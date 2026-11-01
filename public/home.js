@@ -55,6 +55,16 @@ function acctRowHtml(r) {
   return `<a class="row" href="${esc(r.href)}" data-nav>${acctTile(r)}<div class="main"><div class="t1">${esc(r.name)}</div>${r.sub ? `<div class="t2">${esc(acctText(r.sub))}</div>` : ''}</div><div class="amt num ${r.balance < 0 ? 'neg-red' : ''}">${esc(money(r.balance))}${native}</div></a>`;
 }
 
+// Nothing to show yet: the choices UxModel.firstRun gives. A row that leaves the app opens in a new tab.
+function firstRunBlock() {
+  const f = UxModel.firstRun({ redbark: !!accountsData?.sync?.redbark });
+  const choice = (c) => (c.act
+    ? `<button class="btn wide" type="button" data-qa="${c.act}">${I.refresh}${esc(c.label)}</button>`
+    : `<a class="row" href="${esc(c.href)}" ${c.external ? `target="_blank" rel="noopener noreferrer" aria-label="${esc(c.label)}${c.line ? `, ${esc(c.line)}` : ''}, opens in a new tab"` : 'data-nav'}><div class="ic">${I[c.icon]}</div><div class="main"><div class="t1">${esc(c.label)}</div>${c.line ? `<div class="t2">${esc(c.line)}</div>` : ''}</div>${I.chevron}</a>`);
+  const rows = f.choices.filter((c) => !c.act);
+  return `<section class="firstrun"><div class="empty"><div class="art">${I.wallet}</div><h3>${esc(f.title)}</h3></div>${rows.length ? `<div class="rows">${rows.map(choice).join('')}</div>` : ''}${f.choices.filter((c) => c.act).map(choice).join('')}</section>`;
+}
+
 // One card, rows under small section labels (the labels are left off when there is only one section). Edit order
 // (public/home-order.js) swaps the rows for ones with a drag handle and up and down buttons, within each section.
 function accountsBlock(accounts, nw, ord = { on: false }) {
@@ -62,7 +72,7 @@ function accountsBlock(accounts, nw, ord = { on: false }) {
   // them: the units and tickers would give away what the scaled values hide.
   const list = UxModel.accountRows({ accounts, manual: nw?.manual, holdings: nw?.holdings }, { name: accountName }, { expandHoldings: !ord.on && !demoActive() });
   if (!list.count) {
-    return `<section class="card">${emptyState({ icon: I.bank, title: 'No accounts yet', line: 'Connect a bank in Redbark and every account shows up here with its balance.', action: { href: '/accounts', label: 'Open accounts' } })}</section>`;
+    return firstRunBlock();
   }
   const labels = list.sections.length > 1;
   const demo = demoActive();
@@ -88,8 +98,8 @@ function balancesBlock(nw) {
 const QA_TITLES = { fix: 'Sort transactions that have no category', budgets: 'Open budgets', owed: 'Add something a friend owes you', ask: 'Ask about your money', sync: 'Sync every bank now' };
 function actionsBlock(rv) {
   // Ask is chat, which is off in demo mode (its answers carry real dollars).
-  const acts = UxModel.homeActions({ uncategorised: rv?.uncategorised ?? 0, online, syncRunning: !!syncState?.running }).filter((a) => !((demoActive() && a.act === 'chat') || (!CHAT_ON && a.act === 'chat')));
-  return `<div class="qactions ${acts.length < 5 ? 'n4' : ''}" role="group" aria-label="Quick actions">${acts.map((a) => {
+  const acts = UxModel.homeActions({ uncategorised: rv?.uncategorised ?? 0, online, syncRunning: !!syncState?.running, feed: UxModel.hasFeed(accountsData?.sync) }).filter((a) => !((demoActive() && a.act === 'chat') || (!CHAT_ON && a.act === 'chat')));
+  return `<div class="qactions ${acts.length < 5 ? `n${acts.length}` : ''}" role="group" aria-label="Quick actions">${acts.map((a) => {
     const inner = `<span class="qi">${a.id === 'sync' && a.disabled && syncState?.running ? '<span class="spin"></span>' : I[a.icon]}${a.badge ? `<b class="qb num">${esc(a.badge)}</b>` : ''}</span><span class="ql">${esc(a.label)}</span>`;
     const title = esc(a.why ?? QA_TITLES[a.id]);
     return a.href

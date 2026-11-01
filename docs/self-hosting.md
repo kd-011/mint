@@ -82,6 +82,14 @@ cloudflared tunnel run mint
 
 Commands and config follow Cloudflare's [tunnel guide](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/do-more-with-tunnels/local-management/create-local-tunnel/). Without Access (or equivalent) in front, do not do this: the Caddy above hard-codes your identity for whoever arrives. Not tested by the maintainer.
 
+## Timezone
+
+Mint keeps one timezone, set by `MINT_TZ` in `.env` (an IANA name: `Australia/Sydney`, `Australia/Melbourne`, `Australia/Adelaide`, `Australia/Brisbane`, `Australia/Perth`). The default is `Australia/Perth`, so an install that sets nothing behaves as it always has. Every day boundary follows it: what counts as today, pay cycle start and end, the financial year (1 July in that zone), the 02:40 nightly reconcile, alert dates and the dates in exported files. The browser formats dates in the same zone rather than the phone's or laptop's, so a trip abroad does not move your day. Daylight saving needs nothing from you: a day that is 23 or 25 hours long is one day, and the reconcile runs once on both changeover days.
+
+A misspelt or unknown name (including a plain offset such as `+10:00`, which has no daylight saving rules) stops Mint at start with a message that names `MINT_TZ`. `node scripts/check-env.mjs` checks it too.
+
+Set it before the first sync. Mint stores each transaction's date as plain `YYYY-MM-DD` text, worked out in the zone at the time, and never rewrites history. Changing `MINT_TZ` later only changes how new days are bucketed: a transaction that sat just either side of midnight keeps the date it already has, and a cycle that straddles the change can look a day out once. Restart after changing it.
+
 ## Keeping it running
 
 A systemd user unit is enough:
@@ -121,7 +129,7 @@ Your own book:
 ```sh
 cp .env.example .env
 chmod 600 .env
-# fill in REDBARK_API_KEY, MINT_GATE_KEY, MINT_USER and MINT_ORIGIN
+# fill in MINT_GATE_KEY, MINT_USER and MINT_ORIGIN (REDBARK_API_KEY only if you use Redbark)
 docker compose --profile real up -d mint
 ```
 

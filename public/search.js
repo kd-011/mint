@@ -35,7 +35,7 @@ function palRow({ key, icon, title, sub = '', right = '', run, extra = '' }) {
 const palIcon = (svg) => `<span class="ic">${svg}</span>`;
 
 function palStaticSections(q) {
-  const { actions, screens } = UxModel.matchStatic(q, { desktop: finePointer.matches });
+  const { actions, screens } = UxModel.matchStatic(q, { desktop: finePointer.matches, feed: UxModel.hasFeed(accountsData?.sync) });
   return [
     { title: 'Jump to', rows: actions.map((a) => palRow({ key: `a:${a.id}`, icon: palIcon(I[a.icon]), title: a.label, sub: a.hint, run: () => palAction(a.id) })) },
     { title: 'Screens', rows: screens.map((s) => palRow({ key: `s:${s.id}`, icon: palIcon(I[s.icon]), title: s.label, sub: s.hint, right: I.chevron, run: () => goTo(s.href) })) },

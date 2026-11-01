@@ -1,0 +1,4 @@
+Date,Amount,Account Number,,Transaction Type,Transaction Details,Balance,Category,Merchant Name
+15 Oct 26,-4.50,083-000 12345678,,PURCHASE,COFFEE HUT PERTH,1995.50,Eating Out,Coffee Hut
+14 Oct 26,-1250.00,083-000 12345678,,TRANSFER DEBIT,TRANSFER TO SAVINGS,2000.00,Transfers,
+13 Oct 26,3250.00,083-000 12345678,,CREDIT,SALARY ACME PTY LTD,3250.00,Income,

@@ -19,7 +19,8 @@ import { createClient as createWiseClient, normalizeToken } from './lib/wise.mjs
 import { createWiseSync } from './lib/wisesync.mjs';
 import { createIngest } from './lib/ingest.mjs';
 import { createWebhookHandler } from './lib/webhook.mjs';
-import { perthDate, perthMinutes } from './lib/dates.mjs';
+import { zoneDate, assertZone } from './lib/dates.mjs';
+import { dueSync, POLL_MS } from './lib/schedule.mjs';
 import { HttpError } from './lib/errors.mjs';
 import { send, readBody, readJson } from './lib/http.mjs';
 import { createAi } from './lib/categorise.mjs';
@@ -44,11 +45,16 @@ const ROOT = dirname(fileURLToPath(import.meta.url));
 const HOME = process.env.MINT_HOME || ROOT;
 loadEnv(join(HOME, '.env'));
 
-const KEY = process.env.REDBARK_API_KEY || '';
-if (!KEY) {
-  console.error('REDBARK_API_KEY missing from .env, refusing to start');
+// Every date boundary follows this zone (lib/dates.mjs). An unknown name stops the start here, not later as a wrong day.
+let TZ;
+try { TZ = assertZone(process.env.MINT_TZ); } catch (e) {
+  console.error(`${e.message}, refusing to start`);
   process.exit(1);
 }
+
+// Optional. Without it there is no bank feed: manual accounts and CSV statement import work as normal, the
+// 30 minute poll and the nightly reconcile stay off, and the page hides every Redbark prompt (see the start-up line).
+const KEY = (process.env.REDBARK_API_KEY ?? '').trim();
 // The assistant's server-to-server key (step 4). Optional: unset, the bearer door is shut.
 // Set, it must be long enough to be a key. It only ever opens /api/assistant/ and
 // only for a direct loopback caller (see lib/apikey.mjs).
@@ -94,8 +100,6 @@ const SECRETS = { webhook: list(process.env.REDBARK_WEBHOOK_SECRET), events: lis
 let WISE_TOKEN = '';
 let WISE_CONFIG_ERROR = null;
 try { WISE_TOKEN = normalizeToken(process.env.WISE_API_TOKEN); } catch (e) { WISE_CONFIG_ERROR = e.message; }
-const POLL_MS = 30 * 60 * 1000;
-const RECONCILE_AT = 2 * 60 + 40; // 02:40 Perth
 
 const log = (msg) => console.log(String(msg).replace(/[\r\n]+/g, ' '));
 
@@ -133,7 +137,7 @@ const LOCK_ON = !LOCK_OFF;
 }
 const lock = createLock({ db, origin: ORIGIN, devOrigin: LOCK_DEV_ORIGIN, appOrigins: [androidAppOrigin()].filter(Boolean), log });
 
-const client = createClient({ key: KEY, base: process.env.REDBARK_API_BASE || API_BASE });
+const client = KEY ? createClient({ key: KEY, base: process.env.REDBARK_API_BASE || API_BASE }) : null;
 // Unknown merchants go to a cheap model through the shared OpenRouter key:
 // merchant and description only, cached per merchant, capped per day.
 const ai = createAi({
@@ -141,7 +145,7 @@ const ai = createAi({
   model: process.env.MINT_AI_MODEL || 'google/gemini-3.1-flash-lite',
   base: process.env.MINT_AI_BASE || 'https://openrouter.ai/api/v1',
   dailyCap: Number(process.env.MINT_AI_DAILY_CAP) || 1500,
-  today: () => perthDate(),
+  today: () => zoneDate(),
 });
 // Merchant logos: icons fetched once per merchant and cached in the book. The
 // model is asked for a site's domain once per merchant it cannot place, through
@@ -151,7 +155,7 @@ const logos = createLogos({
   model: process.env.MINT_AI_MODEL || 'google/gemini-3.1-flash-lite',
   base: process.env.MINT_AI_BASE || 'https://openrouter.ai/api/v1',
   dailyCap: Number(process.env.MINT_AI_DAILY_CAP) || 1500,
-  today: () => perthDate(),
+  today: () => zoneDate(),
 });
 // Staleness alerts only make sense when this process is polling.
 const engine = createEngine({ db, ai, logos: SCHEDULER ? logos : null, log, staleHours: SCHEDULER ? 24 : 0, wise: !!WISE_TOKEN || !!WISE_CONFIG_ERROR });
@@ -160,7 +164,7 @@ engine.init();
 // and the manual foreign-currency accounts. New rates re-convert any manual rows
 // that were saved on an older stand-in rate while offline.
 const frankfurter = createFrankfurter({ base: process.env.MINT_FX_BASE || undefined });
-const fx = createFx({ db, client: frankfurter, log, onRates: (cur) => revalueManual(db, cur, { today: perthDate() }) });
+const fx = createFx({ db, client: frankfurter, log, onRates: (cur) => revalueManual(db, cur, { today: zoneDate() }) });
 // Wise rides on the Redbark queue below (a poll, a reconcile, Sync now), so there is no second one.
 const wise = createWiseSync({ db, client: WISE_TOKEN ? createWiseClient({ token: WISE_TOKEN }) : null, configError: WISE_CONFIG_ERROR, fx, log });
 const ingest = createIngest({ db, client, log, afterSync: () => engine.afterSync(), wise });
@@ -171,7 +175,7 @@ const priceSource = createPriceRouter({
   US: createAlphaVantage({ key: process.env.ALPHAVANTAGE_API_KEY || '', base: process.env.ALPHAVANTAGE_BASE || undefined }),
   ASX: createYahoo({ base: process.env.YAHOO_CHART_BASE || undefined }),
 }, { fx: (from) => frankfurter.rate(from) });
-const quotes = createQuotes({ db, source: priceSource, log, dailyCap: Number(process.env.MINT_QUOTE_DAILY_CAP) || 25, today: () => perthDate() });
+const quotes = createQuotes({ db, source: priceSource, log, dailyCap: Number(process.env.MINT_QUOTE_DAILY_CAP) || 25, today: () => zoneDate() });
 const api = createApi({ db, engine, ai, quotes, logos, fx, dataDir: DATA, log });
 const chatTurns = createChatTurns({ db });
 const assistantApi = createAssistantApi({ db, engine, quotes, fx, turns: chatTurns, origin: ORIGIN, log });
@@ -222,14 +226,16 @@ const KIT = ['kit/kit.css', 'kit/kit.js', 'kit/icons.svg', 'kit/fonts/geist-lati
 const FILES = ['index.html', 'style.css', 'kit-boot.js', ...KIT, ...SCRIPTS, 'sw.js', 'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
 const raw = Object.fromEntries(FILES.map((f) => [f, readFileSync(join(PUBLIC, f))]));
 // Asset version from content, so every frontend change busts Cloudflare and the SW cache.
-const VERSION = createHash('sha256').update(raw['style.css']).update(raw['index.html']).update(raw['kit-boot.js']).update(Buffer.concat(KIT.map((f) => raw[f]))).update(Buffer.concat(SCRIPTS.map((f) => raw[f]))).digest('hex').slice(0, 10);
+const VERSION = createHash('sha256').update(raw['style.css']).update(raw['index.html']).update(raw['kit-boot.js']).update(Buffer.concat(KIT.map((f) => raw[f]))).update(Buffer.concat(SCRIPTS.map((f) => raw[f]))).update(TZ).digest('hex').slice(0, 10);
+// __TZ__ becomes the MINT_TZ zone, so the browser formats dates in the server's zone (see MINT_TZ in public/core.js) and the
+// cached shell keeps working offline; the zone is in the asset version, so changing it busts every cache.
 // __CHAT__ becomes on or off: the chat UI is optional and only appears when MINT_CHAT_KEY is set (see CHAT_ON in public/core.js).
 // The page lists its scripts as __SCRIPTS__ and the worker lists them as __SHELL_SCRIPTS__, so a new file is added in one place.
 const scriptTags = SCRIPTS.map((f) => `<script src="/${f}?v=${VERSION}" defer></script>`).join('\n');
 const shellScripts = SCRIPTS.map((f) => `'/${f}?v=${VERSION}'`).join(', ');
 const STATIC = Object.fromEntries(FILES.map((f) => {
   const body = /\.(html|js)$/.test(f)
-    ? Buffer.from(raw[f].toString().replaceAll('__SCRIPTS__', scriptTags).replaceAll('__SHELL_SCRIPTS__', shellScripts).replaceAll('__TAB_PATHS__', JSON.stringify(SHELL_PATHS)).replaceAll('__V__', VERSION).replaceAll('__CHAT__', chatProxy.configured ? 'on' : 'off'))
+    ? Buffer.from(raw[f].toString().replaceAll('__SCRIPTS__', scriptTags).replaceAll('__SHELL_SCRIPTS__', shellScripts).replaceAll('__TAB_PATHS__', JSON.stringify(SHELL_PATHS)).replaceAll('__V__', VERSION).replaceAll('__TZ__', TZ).replaceAll('__CHAT__', chatProxy.configured ? 'on' : 'off'))
     : raw[f];
   return [`/${f}`, { body, type: TYPES[f.slice(f.lastIndexOf('.'))], cache: /\.(png|svg|woff2)$/.test(f) ? 'public, max-age=86400' : 'no-cache' }];
 }));
@@ -298,6 +304,7 @@ function accountsPayload() {
       ...h.sync,
       nextPollAt: SCHEDULER && lastPoll ? new Date(Date.parse(lastPoll) + POLL_MS).toISOString() : null,
       scheduler: SCHEDULER,
+      redbark: ingest.feeds().redbark,
       webhook: SECRETS.webhook.length + SECRETS.events.length > 0,
       wise: wise.status(),
       lastWebhookAt: db.prepare('SELECT max(received_at) t FROM webhook_deliveries').get().t,
@@ -434,6 +441,8 @@ async function route(req, res, url) {
 
   if (pathname === '/api/sync' && method === 'GET') return send(res, 200, { ...ingest.state(), queued: !!queued });
   if (pathname === '/api/sync' && method === 'POST') {
+    const { redbark, wise: wiseOn } = ingest.feeds();
+    if (!redbark && !wiseOn) throw new HttpError(409, 'There is no bank feed to sync. Add accounts by hand and import a CSV statement, or set REDBARK_API_KEY to read your banks.');
     const already = ingest.state().running;
     if (!already) ingest.runSync('poll');
     return send(res, 202, { ...ingest.state(), already });
@@ -519,19 +528,15 @@ const server = createServer(async (req, res) => {
 
 // ---------- scheduler ----------
 // Poll every 30 minutes (first run backfills each account's full history),
-// reconcile nightly at 02:40 Perth: a 120 day re-walk, balances and loan
+// reconcile nightly at 02:40 local time (lib/schedule.mjs): a 120 day re-walk, balances and loan
 // details into today's snapshot row. Every poll also refreshes today's row.
 
 function tick() {
   if (ingest.state().running) return;
-  const now = new Date();
-  const lastReconcile = getSetting(db, 'last_reconcile_at');
-  if (perthMinutes(now) >= RECONCILE_AT && (!lastReconcile || perthDate(new Date(lastReconcile)) !== perthDate(now))) {
-    ingest.runSync('reconcile');
-    return;
-  }
-  const lastPoll = getSetting(db, 'last_poll_at');
-  if (!lastPoll || now - Date.parse(lastPoll) >= POLL_MS) ingest.runSync('poll');
+  const { redbark, wise: wiseOn } = ingest.feeds();
+  if (!redbark && !wiseOn) return; // no bank feed: nothing to poll or reconcile
+  const due = dueSync({ now: new Date(), lastReconcile: getSetting(db, 'last_reconcile_at'), lastPoll: getSetting(db, 'last_poll_at') });
+  if (due) ingest.runSync(due);
 }
 
 // Quotes: the service decides what is due (15 minutes while a market is open,
@@ -546,10 +551,10 @@ async function quoteTick() {
     snapshotPortfolio(db, { cap: quotes.status().cap });
   } catch (e) { log(`quote tick failed: ${e?.message ?? e}`); } finally { quoteBusy = false; }
   // Manual accounts: the latest rate for each currency in use (every 6 hours), and
-  // today's snapshot row for each, once a Perth day, so net worth history has the day.
+  // today's snapshot row for each, once a local day, so net worth history has the day.
   try {
     await fx.refreshLatest();
-    const day = perthDate();
+    const day = zoneDate();
     if (getSetting(db, 'manual_snapshot_day') !== day) { recomputeAll(db, { today: day }); setSetting(db, 'manual_snapshot_day', day); }
   } catch (e) { log(`exchange rate tick failed: ${e?.message ?? e}`); }
 }
@@ -562,6 +567,8 @@ for (const sig of ['SIGTERM', 'SIGINT']) {
 
 server.listen(PORT, HOST, () => {
   log(`mint listening on http://${HOST}:${server.address().port} (scheduler ${SCHEDULER ? 'on' : 'off'}, webhook ${SECRETS.webhook.length + SECRETS.events.length ? 'on' : 'off'}, ${LOCK_ON ? `fingerprint lock on, ${lock.count()} enrolled` : 'fingerprint lock off (MINT_LOCK=off)'})`);
+  const feeds = ingest.feeds();
+  if (!feeds.redbark) log(`bank feed is off: REDBARK_API_KEY is not set, so the 30 minute poll and the nightly reconcile stay off${feeds.wise ? ' (Wise still syncs)' : ''}. Manual accounts and CSV import work as normal (docs/csv-import.md)`);
   if (SCHEDULER) {
     setTimeout(tick, 5_000);
     setInterval(tick, 60_000).unref();

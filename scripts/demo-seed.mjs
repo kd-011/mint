@@ -6,7 +6,7 @@
 //   node scripts/demo-seed.mjs [port] [--empty] [--home DIR]
 //
 // Then open http://127.0.0.1:<port>/ (default 8980). Everything is invented, dated
-// relative to today (Perth). Ctrl-C stops it and deletes the temp directory.
+// relative to today (in the MINT_TZ zone). Ctrl-C stops it and deletes the temp directory.
 // It is the engine in scripts/ui-fixture.mjs with the demo defaults.
 import { spawn } from 'node:child_process';
 import { dirname, join } from 'node:path';
