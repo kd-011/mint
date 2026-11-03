@@ -1,6 +1,6 @@
 # Security policy
 
-Mint holds bank data, so security reports are taken seriously.
+Mint holds bank data, so I take security reports seriously.
 
 ## Reporting a vulnerability
 
@@ -8,7 +8,7 @@ Please do not open a public issue.
 
 Use GitHub's private vulnerability reporting: on the repository, open the Security tab and choose "Report a vulnerability" (https://github.com/kd-011/mint/security/advisories/new). Say what you found and how to reproduce it. Never include real financial data, real names or live credentials; invented data and the demo (`node scripts/demo-seed.mjs`) are enough to show a problem.
 
-This is a one-person project, so there is no response-time guarantee. Reports are read, and a confirmed problem is fixed and disclosed in the advisory once a fix is out.
+This is a one-person project, so there is no response-time guarantee. I read every report. A confirmed problem is fixed first, then disclosed in the advisory.
 
 ## Supported versions
 

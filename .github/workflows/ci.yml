@@ -4,6 +4,10 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Exports land as pushes, but weeks can pass between them: this keeps the badge honest.
+  schedule:
+    - cron: "37 4 * * 1"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -13,8 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
       # the backup tests drive the real age and age-keygen binaries

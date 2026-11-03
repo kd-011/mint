@@ -57,7 +57,59 @@ test('the GitHub furniture is there and points at real paths', () => {
   assert.ok(read('README.md').includes('actions/workflows/ci.yml'));
 });
 
+test('CI runs once a week as well, so the badge stays honest with no push', () => {
+  const ci = read('.github/workflows/ci.yml');
+  assert.match(ci, /schedule:\n\s+- cron: "\d+ \d+ \* \* \d"/);
+  assert.match(ci, /workflow_dispatch:/);
+});
+
+test('Dependabot is weekly, grouped, with a cooldown against fresh releases', () => {
+  const dep = read('.github/dependabot.yml');
+  assert.doesNotMatch(dep, /interval: (daily|monthly)/);
+  assert.equal(dep.match(/interval: weekly/g).length, 2, 'both ecosystems');
+  assert.equal(dep.match(/cooldown:\n\s+default-days: 7/g).length, 2, 'both ecosystems');
+  assert.equal(dep.match(/groups:[\s\S]*?update-types:\n\s+- minor\n\s+- patch/g).length, 2, 'both ecosystems');
+});
+
+test('this repo is exported, so nothing merges on it by itself', () => {
+  assert.ok(!existsSync(join(ROOT, '.github/workflows/dependabot-automerge.yml')));
+});
+
+test('the weekly upkeep job checks links and dossier drift with pinned tools, and only touches one labelled issue', () => {
+  const y = read('.github/workflows/upkeep.yml');
+  assert.match(y, /schedule:\n\s+- cron: "\d+ \d+ \* \* \d"/);
+  assert.match(y, /lycheeverse\/lychee-action@[0-9a-f]{40}/, 'the third-party action is pinned by SHA');
+  assert.match(y, /--max-retries/);
+  assert.match(y, /npm install -g github:kd-011\/dossier-scribe#v\d+\.\d+\.\d+/, 'dossier-scribe comes from a tag, never a branch');
+  assert.match(y, /fetch-depth: 0/);
+  assert.match(y, /sync-issue\.sh link-rot/);
+  assert.match(y, /sync-issue\.sh dossier-drift/);
+  assert.match(y, /^permissions:\n\s+contents: read/m);
+  assert.doesNotMatch(y, /contents: write|pull-requests: write/, 'it opens issues, never pull requests or commits');
+  const sh = join(ROOT, '.github/scripts/sync-issue.sh');
+  assert.ok(existsSync(sh));
+  assert.ok(statSync(sh).mode & 0o100, 'the script is executable');
+});
+
+test('the dossier makes 5 to 15 cited claims about the public tree and is locked', () => {
+  const cfg = JSON.parse(read('dossier-scribe.json'));
+  assert.deepEqual(cfg.collectors, ['package'], 'the git and filetypes collectors go stale on every commit');
+  const md = read(`${cfg.dossiers}/mint.md`);
+  const claims = md.split('\n').filter((l) => /^- .*<!-- src: /.test(l));
+  assert.ok(claims.length >= 5 && claims.length <= 15, `${claims.length} claims`);
+  for (const c of claims) {
+    for (const src of /<!-- src: (.*?) -->/.exec(c)[1].split(',')) assert.ok(existsSync(join(ROOT, src.trim().split(':')[0])), `${src} exists`);
+  }
+  assert.ok(existsSync(join(ROOT, cfg.dossiers, '.dossier-lock.json')));
+});
+
+test('the GitHub social preview is the right size', () => {
+  const png = readFileSync(join(ROOT, '.github/social-preview.png'));
+  assert.equal(png.readUInt32BE(16), 1280);
+  assert.equal(png.readUInt32BE(20), 640);
+});
+
 test('no em dash in the README, docs or GitHub files', () => {
-  const files = [...DOCS, '.github/PULL_REQUEST_TEMPLATE.md', '.github/ISSUE_TEMPLATE/bug_report.yml', '.github/ISSUE_TEMPLATE/feature_request.yml', 'Dockerfile', 'docker-compose.yml'];
+  const files = [...DOCS, '.github/PULL_REQUEST_TEMPLATE.md', '.github/ISSUE_TEMPLATE/bug_report.yml', '.github/ISSUE_TEMPLATE/feature_request.yml', '.github/workflows/upkeep.yml', '.github/scripts/sync-issue.sh', 'dossiers/mint.md', 'Dockerfile', 'docker-compose.yml'];
   for (const f of files) assert.ok(!read(f).includes('—'), `${f} has an em dash`);
 });

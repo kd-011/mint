@@ -30,7 +30,13 @@ export const ALLOW_MARKER = 'scan-allow';
 // Kinds that are expected, and allowed, in a given place. The CSV import fixtures hold invented
 // bank layouts (BSB and account columns) that cannot carry an inline marker without breaking the
 // file they exist to exercise.
-const ALLOWED_KINDS = [[/^test\/fixtures\/csv\//, new Set(['BSB and account'])]];
+// Workflows pin third-party actions by commit SHA, and the dossier lock is a list of content hashes:
+// both look like a long hex key and neither can carry a marker.
+const ALLOWED_KINDS = [
+  [/^test\/fixtures\/csv\//, new Set(['BSB and account'])],
+  [/^\.github\/workflows\/[^/]+\.yml$/, new Set(['long-hex (key shape)'])],
+  [/^dossiers\/\.dossier-lock\.json$/, new Set(['long-hex (key shape)'])],
+];
 const allowedHere = (file, kind) => ALLOWED_KINDS.some(([re, kinds]) => re.test(file) && kinds.has(kind));
 
 // Never published, whatever they contain. Matched against the path relative to the scan root.
@@ -77,10 +83,16 @@ const RULES = [
 
 const BINARY_EXT = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.ico', '.woff', '.woff2', '.ttf', '.jar', '.zip', '.gz', '.age', '.pdf', '.keystore', '.jks', '.db']);
 
+export const denylistFile = () => process.env.MINT_DENYLIST || join(homedir(), '.config', 'mint', 'export-denylist.txt');
+
+/** The entries in the denylist file, or null when there is no file. */
+export function denylistEntries(file = denylistFile()) {
+  if (!existsSync(file)) return null;
+  return readFileSync(file, 'utf8').split('\n').map((l) => l.trim()).filter((l) => l && !l.startsWith('#'));
+}
+
 export function loadDenylist(extra = []) {
-  const out = [...extra];
-  const file = process.env.MINT_DENYLIST || join(homedir(), '.config', 'mint', 'export-denylist.txt');
-  if (existsSync(file)) for (const l of readFileSync(file, 'utf8').split('\n')) if (l.trim() && !l.startsWith('#')) out.push(l.trim());
+  const out = [...extra, ...(denylistEntries() ?? [])];
   return [...new Set(out.map((s) => (s.startsWith('re:') ? s : s.toLowerCase())))];
 }
 

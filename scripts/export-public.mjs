@@ -21,6 +21,12 @@
 // Without --push the commit is left ready; with --push it is pushed to origin (also when an
 // earlier run left a commit unpushed).
 //
+// The scans read text and cannot see inside a picture, so step 3 also runs the image gate: an image or
+// binary that is new or changed, in the staged tree or in any unpushed commit, has to be listed by exact
+// path in scripts/export-allowlist.txt at REF (what the fixture scripts generate). Anything else aborts
+// the same way, before the commit, and exits EXIT_IMAGE_GATE with the paths on stderr, so a scheduled job
+// can ask a human to look at them instead of pushing. There is no flag to skip it.
+//
 // --fresh keeps the original behaviour: write a brand-new one-commit repo with no remote to DIR
 // (refuses a non-empty DIR unless --force, and only ever deletes a git repo), scan the finished
 // repo tree and history, and remove it if that fails.
@@ -32,13 +38,14 @@
 //
 // Findings print as file:line and kind, never the matched text. Literals you never want
 // published (your domain, email, home path) go in ~/.config/mint/export-denylist.txt
-// (or MINT_DENYLIST), see scripts/secret-scan.mjs.
+// (or MINT_DENYLIST), see scripts/secret-scan.mjs. The export refuses to run if that file is missing or
+// has no entries: without it the scans would pass a tree holding every one of those strings.
 import { execFileSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { FORBIDDEN_PATHS, loadDenylist, scanHistory, scanStagedDiff, scanText, scanTree, summarise } from './secret-scan.mjs';
+import { FORBIDDEN_PATHS, denylistEntries, denylistFile, loadDenylist, scanHistory, scanStagedDiff, scanText, scanTree, summarise } from './secret-scan.mjs';
 
 export const DEFAULT_IDENTITY = { name: 'kd-011', email: '229900447+kd-011@users.noreply.github.com' };
 
@@ -85,6 +92,72 @@ function pruneEmptyDirs(dir) {
 }
 
 const git = (cwd, args, opts = {}) => execFileSync('git', ['-C', cwd, ...args], { encoding: 'utf8', maxBuffer: 1 << 30, ...opts }).trim();
+
+// The export's own exit code when the image gate refuses; any other failure exits 1.
+export const EXIT_IMAGE_GATE = 3;
+export const ALLOWLIST_FILE = 'scripts/export-allowlist.txt';
+
+// Pictures and containers the scans skip or cannot read, whatever git makes of them.
+const GATED_EXT = /\.(png|jpe?g|gif|webp|avif|heic|heif|bmp|tiff?|ico|svgz?|psd|xcf|ai|eps|pdf|mp4|m4v|mov|webm|mkv|avi|mp3|m4a|wav|ogg|zip|tgz|gz|bz2|xz|7z|rar|tar|jar|war|apk|aab|ipa|dmg|exe|dll|so|dylib|bin|wasm|woff2?|ttf|otf|eot|age)$/i;
+const UTF8 = new TextDecoder('utf-8', { fatal: true });
+const SCAN_LIMIT = 3_000_000; // scanTree does not read a file over this size
+const DATA_URI = /data:[a-z]+\/[a-z0-9.+-]+;base64,[A-Za-z0-9+/=]{200,}/i;
+const BLOB_LINE = /^[A-Za-z0-9+/=\s]{4001,}$/m; // scanText skips a line like this as an embedded blob
+
+/** Why the image gate cares about this file, or null when it is plain text the scans can read. */
+export function gatedReason(rel, buf) {
+  if (GATED_EXT.test(rel)) return 'image or binary by name';
+  if (buf.length > SCAN_LIMIT) return 'too large for the scan to read';
+  if (buf.includes(0) || buf.subarray(0, 5).toString('latin1') === '%PDF-') return 'binary content';
+  let text;
+  try { text = UTF8.decode(buf); } catch { return 'binary content'; }
+  if (DATA_URI.test(text) || BLOB_LINE.test(text)) return 'embedded base64 blob';
+  return null;
+}
+
+export function readAllowlist(source, ref) {
+  let body = '';
+  try { body = git(source, ['show', `${ref}:${ALLOWLIST_FILE}`], { stdio: ['ignore', 'pipe', 'ignore'] }); } catch { /* no file: nothing is allowed */ }
+  return new Set(body.split('\n').map((l) => l.trim()).filter((l) => l && !l.startsWith('#')));
+}
+
+function requireDenylist() {
+  const file = denylistFile();
+  const entries = denylistEntries(file);
+  if (!entries) throw new Error(`the denylist ${file} is missing; refusing to export without it`);
+  if (!entries.length) throw new Error(`the denylist ${file} has no entries; refusing to export without it`);
+}
+
+function gateError(gated) {
+  const e = new Error(`image gate refused the export: ${gated.length} image or binary path(s) new or changed and not in ${ALLOWLIST_FILE}`);
+  e.findings = gated;
+  e.exitCode = EXIT_IMAGE_GATE;
+  return e;
+}
+
+// Paths the allowlist does not cover, as "path  reason" lines. `read` gets a path and returns its bytes.
+function gateFindings(paths, read, allow, seen = new Map()) {
+  for (const rel of paths) {
+    if (allow.has(rel) || seen.has(rel)) continue;
+    const why = gatedReason(rel, read(rel));
+    if (why) seen.set(rel, why);
+  }
+  return seen;
+}
+
+// What this run would publish beyond origin: the staged tree, and every commit an earlier run left
+// unpushed. Those count on their own, because a picture added and later removed is still in history.
+function imageGate(out, { allow, remoteRef }) {
+  const blob = (spec) => execFileSync('git', ['-C', out, 'cat-file', 'blob', spec], { maxBuffer: 1 << 30 });
+  const staged = git(out, ['diff', '--cached', '--no-renames', '--diff-filter=d', '--name-only', '-z', 'HEAD']).split('\0').filter(Boolean);
+  const seen = gateFindings(staged, (rel) => blob(`:${rel}`), allow);
+  const unpushed = git(out, ['rev-list', `${remoteRef}..HEAD`]).split('\n').filter(Boolean);
+  for (const c of unpushed) {
+    const changed = git(out, ['diff-tree', '-m', '--root', '-r', '--no-commit-id', '--no-renames', '--diff-filter=d', '--name-only', '-z', c]).split('\0').filter(Boolean);
+    gateFindings(new Set(changed), (rel) => blob(`${c}:${rel}`), allow, seen);
+  }
+  return [...seen].map(([rel, why]) => `${rel}  ${why}`);
+}
 
 // Where the private sha of the last export is kept: inside .git, so never in the tree and never pushed.
 const STATE_FILE = 'mint-export-state.json';
@@ -138,6 +211,7 @@ const commitEnv = (id) => ({ ...process.env, GIT_AUTHOR_NAME: id.authorName, GIT
  * Error whose `findings` lists what the scan found when it refuses.
  */
 export function buildExport({ source, out, ref = 'HEAD', force = false, deny = [], exclude = [], author = null, log = () => {} }) {
+  requireDenylist();
   source = resolve(source);
   out = resolve(out);
   const top = git(source, ['rev-parse', '--show-toplevel']);
@@ -147,8 +221,10 @@ export function buildExport({ source, out, ref = 'HEAD', force = false, deny = [
     if (!existsSync(join(out, '.git'))) throw new Error(`${out} is not a git repo made by this script, refusing to delete it`);
   }
 
-  const { stage, omitted, denyList } = stageTree({ source, ref, deny, exclude, log });
+  const { stage, omitted, files, denyList } = stageTree({ source, ref, deny, exclude, log });
   try {
+    const gated = [...gateFindings(files, (rel) => readFileSync(join(stage, rel)), readAllowlist(source, ref))].map(([rel, why]) => `${rel}  ${why}`);
+    if (gated.length) throw gateError(gated);
     const id = exportIdentity(author);
 
     if (existsSync(out)) rmSync(out, { recursive: true, force: true });
@@ -215,6 +291,7 @@ function commitMessage({ subjects, more, withheld }) {
  * refused) and leaves the checkout exactly as it found it.
  */
 export function updatePublic({ source, out, ref = 'HEAD', branch = 'main', from = null, push = false, deny = [], exclude = [], author = null, log = () => {} }) {
+  requireDenylist();
   source = resolve(source);
   out = resolve(out);
   const top = git(source, ['rev-parse', '--show-toplevel']);
@@ -257,6 +334,9 @@ export function updatePublic({ source, out, ref = 'HEAD', branch = 'main', from 
     const staged = new Set(g('ls-files', '-z').split('\0').filter(Boolean));
     const lost = files.filter((f) => !staged.has(f));
     if (lost.length) throw new Error(`${lost.length} file(s) of the export would be left out of the commit by the checkout's .gitignore: ${lost.slice(0, 5).join(', ')}`);
+
+    const gated = imageGate(out, { allow: readAllowlist(source, ref), remoteRef });
+    if (gated.length) throw gateError(gated);
 
     if (g('diff', '--cached', '--name-only', '-z', 'HEAD').split('\0').filter(Boolean).length) {
       const diffFindings = scanStagedDiff(out, { deny: denyList });
@@ -313,6 +393,6 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   } catch (e) {
     console.error(`export failed: ${e.message}`);
     for (const f of e.findings ?? []) console.error(`  ${f}`);
-    process.exit(1);
+    process.exit(e.exitCode ?? 1);
   }
 }

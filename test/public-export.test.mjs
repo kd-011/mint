@@ -221,10 +221,21 @@ test('weaken only the exclude list: the scan still refuses (two layers)', () => 
   assert.ok(!existsSync(out));
 });
 
-test('weaken both layers: the private files leak, so the tests above really are guarding something', () => {
+test('weaken the exclude list and the scans: the image gate still stops the pictures (three layers)', () => {
+  const src = join(work, 'mut-b0');
+  makeRepo(src);
+  const dir = weakened('scripts-b0', [['if (isExcluded(rel, exclude))', 'if (false)'], ['if (findings.length) {', 'if (false) {'], ['if (final.length) {', 'if (false) {']]);
+  const out = join(work, 'out-mut-b0');
+  const r = exportFrom(src, out, [], dir);
+  assert.equal(r.status, 3, r.stderr);
+  assert.match(r.stderr, /docs\/demo-mode\/m-home\.png/);
+  assert.ok(!existsSync(out));
+});
+
+test('weaken every layer: the private files leak, so the tests above really are guarding something', () => {
   const src = join(work, 'mut-b');
   makeRepo(src);
-  const dir = weakened('scripts-b', [['if (isExcluded(rel, exclude))', 'if (false)'], ['if (findings.length) {', 'if (false) {'], ['if (final.length) {', 'if (false) {']]);
+  const dir = weakened('scripts-b', [['if (isExcluded(rel, exclude))', 'if (false)'], ['if (findings.length) {', 'if (false) {'], ['if (final.length) {', 'if (false) {'], ['if (gated.length) throw', 'if (false) throw']]);
   const out = join(work, 'out-mut-b');
   const r = exportFrom(src, out, [], dir);
   assert.equal(r.status, 0, r.stderr);

@@ -1,6 +1,6 @@
 # Self-hosting Mint
 
-Mint holds your bank data, so the way it is exposed matters more than the way it is installed. Read "How Mint is locked" first, whichever recipe you pick.
+Mint holds your bank data, so how you expose it matters more than how you install it. Read "How Mint is locked" first, whichever recipe you pick.
 
 ## How Mint is locked
 
@@ -17,7 +17,7 @@ The Redbark webhook path, `/api/redbark/webhook`, is the one route that skips th
 
 ## Caddy with Authelia
 
-Any forward-auth style proxy works (Authentik, oauth2-proxy, Traefik forward auth). This is the shape with Caddy and [Authelia](https://www.authelia.com/integration/proxies/caddy/), whose Caddy page gives the `forward_auth` block and says `Remote-User` carries the username:
+Any forward-auth proxy works (Authentik, oauth2-proxy, Traefik forward auth). This is the setup with Caddy and [Authelia](https://www.authelia.com/integration/proxies/caddy/), whose Caddy page gives the `forward_auth` block and says `Remote-User` carries the username:
 
 ```
 mint.example.com {
@@ -41,7 +41,7 @@ Give Caddy the same `MINT_GATE_KEY` in its environment (a systemd `EnvironmentFi
 
 ## Tailscale
 
-[Tailscale Serve](https://tailscale.com/kb/1312/serve) puts a local service on `https://<device>.<tailnet>.ts.net` for your own tailnet only, and proxies to `http://127.0.0.1`. It adds identity headers named `Tailscale-User-Login` and friends. It does not send `Remote-User` or a shared secret, and it has no way to add custom headers, so put a tiny Caddy between the two to add them. The tailnet is then the login:
+[Tailscale Serve](https://tailscale.com/kb/1312/serve) puts a local service on `https://<device>.<tailnet>.ts.net` for your own tailnet only, and proxies to `http://127.0.0.1`. It adds identity headers such as `Tailscale-User-Login`, but it sends no `Remote-User` or shared secret and cannot add custom headers. Put a tiny Caddy between the two to add them. The tailnet then acts as the login:
 
 ```
 # /etc/caddy/Caddyfile: loopback only, reached through Tailscale Serve
@@ -57,11 +57,11 @@ http://127.0.0.1:8971 {
 tailscale serve 8971
 ```
 
-Set `MINT_USER=owner` and `MINT_ORIGIN=https://<device>.<tailnet>.ts.net`. Anyone who can reach the Serve address, or run a local process, gets in at the gateway level, so limit it with your tailnet access rules, and keep the passkey lock on. Do not use Tailscale Funnel: that publishes the address to the internet with no login. Not tested by the maintainer; the commands follow Tailscale's own docs.
+Set `MINT_USER=owner` and `MINT_ORIGIN=https://<device>.<tailnet>.ts.net`. Anyone who can reach the Serve address, or run a local process, gets past the gateway. Limit that with your tailnet access rules and keep the passkey lock on. Do not use Tailscale Funnel: it publishes the address to the internet with no login. The maintainer has not tested this; the commands follow Tailscale's own docs.
 
 ## Cloudflare Tunnel
 
-A tunnel is a way in, not a login. `cloudflared` cannot add `Remote-User` or `X-Mint-Gate`, and a bare tunnel is open to the internet. If you use one, put [Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/) in front of the host name so that only you can reach it, and point the tunnel at the same small Caddy as above:
+A tunnel gets traffic to your machine but does not log anyone in. `cloudflared` cannot add `Remote-User` or `X-Mint-Gate`, and a bare tunnel is open to the internet. If you use one, put [Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/) in front of the host name so that only you can reach it, and point the tunnel at the same small Caddy as above:
 
 ```yaml
 # ~/.cloudflared/config.yml
@@ -80,19 +80,19 @@ cloudflared tunnel route dns mint mint.example.com
 cloudflared tunnel run mint
 ```
 
-Commands and config follow Cloudflare's [tunnel guide](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/do-more-with-tunnels/local-management/create-local-tunnel/). Without Access (or equivalent) in front, do not do this: the Caddy above hard-codes your identity for whoever arrives. Not tested by the maintainer.
+Commands and config follow Cloudflare's [tunnel guide](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/do-more-with-tunnels/local-management/create-local-tunnel/). Without Access or something equivalent in front, do not do this: the Caddy above hard-codes your identity for whoever arrives. The maintainer has not tested this.
 
 ## Timezone
 
-Mint keeps one timezone, set by `MINT_TZ` in `.env` (an IANA name: `Australia/Sydney`, `Australia/Melbourne`, `Australia/Adelaide`, `Australia/Brisbane`, `Australia/Perth`). The default is `Australia/Perth`, so an install that sets nothing behaves as it always has. Every day boundary follows it: what counts as today, pay cycle start and end, the financial year (1 July in that zone), the 02:40 nightly reconcile, alert dates and the dates in exported files. The browser formats dates in the same zone rather than the phone's or laptop's, so a trip abroad does not move your day. Daylight saving needs nothing from you: a day that is 23 or 25 hours long is one day, and the reconcile runs once on both changeover days.
+Mint uses one timezone, set by `MINT_TZ` in `.env` (an IANA name: `Australia/Sydney`, `Australia/Melbourne`, `Australia/Adelaide`, `Australia/Brisbane`, `Australia/Perth`). The default is `Australia/Perth`, so an install that sets nothing behaves as it always has. Every day boundary follows the zone: what counts as today, pay cycle start and end, the financial year (1 July in that zone), the 02:40 nightly reconcile, alert dates and the dates in exported files. The browser formats dates in the same zone, not the phone's or laptop's, so a trip abroad does not move your day. Daylight saving needs nothing from you: a 23 or 25 hour day counts as one day, and the reconcile runs once on both changeover days.
 
 A misspelt or unknown name (including a plain offset such as `+10:00`, which has no daylight saving rules) stops Mint at start with a message that names `MINT_TZ`. `node scripts/check-env.mjs` checks it too.
 
-Set it before the first sync. Mint stores each transaction's date as plain `YYYY-MM-DD` text, worked out in the zone at the time, and never rewrites history. Changing `MINT_TZ` later only changes how new days are bucketed: a transaction that sat just either side of midnight keeps the date it already has, and a cycle that straddles the change can look a day out once. Restart after changing it.
+Set it before the first sync. Mint stores each transaction's date as plain `YYYY-MM-DD` text, worked out in the zone at the time, and never rewrites history. Changing `MINT_TZ` later changes only how new days are bucketed. A transaction that sat just either side of midnight keeps the date it already has, and a cycle that straddles the change can look a day out once. Restart after you change it.
 
 ## Keeping it running
 
-A systemd user unit is enough:
+A systemd user unit does the job:
 
 ```ini
 # ~/.config/systemd/user/mint.service
@@ -135,11 +135,11 @@ docker compose --profile real up -d mint
 
 This publishes `127.0.0.1:8970` and stores the database in the `mint-data` volume. The login proxy (above) runs on the host or in another container and must be the only way in. Inside the container Mint binds `0.0.0.0` (that is what `MINT_HOST` is for; leave it alone outside Docker), so do not change the `127.0.0.1:` prefix on the published port.
 
-Back up the volume as you would any database: `docker compose exec mint node scripts/backup.mjs` writes a consistent snapshot under `/data/backups`.
+Back up the volume like any database: `docker compose exec mint node scripts/backup.mjs` writes a consistent snapshot under `/data/backups`.
 
 ## Updating
 
-Mint keeps its schema changes additive and migrates on start. Take a backup first, then pull the new version and restart:
+Schema changes are additive and Mint migrates on start. Take a backup first, then pull the new version and restart:
 
 ```sh
 node scripts/backup.mjs
@@ -147,4 +147,4 @@ git pull
 systemctl --user restart mint     # or: docker compose --profile real up -d --build mint
 ```
 
-Read the release notes before a minor version change.
+Read the release notes before a minor version bump.

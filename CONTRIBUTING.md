@@ -7,7 +7,7 @@ Mint is a single-user, self-hosted personal finance app for Australians. Small, 
 - Mint reads bank data and holds it. Never put real account data, real balances, real merchants, real names, API keys or screenshots of your own book in an issue, a pull request, a test or a fixture. Use invented data (`test/fixtures/`, `scripts/demo-seed.mjs`).
 - Money is integer cents everywhere. Dates are `YYYY-MM-DD` in the API and DD/MM/YYYY on screen. Do not introduce floats for money.
 - Keep it dependency-free: Node 22 (`node:http`, `node:sqlite`) on the server, plain JS in `public/`, no bundler. A new npm package needs a very good reason.
-- Match the surrounding code: naming, comment density, idiom. Comments say why, not what.
+- Match the surrounding code: naming, comment density, idiom. Comments explain why the code does something.
 - No em dashes in code, comments or docs. Use commas, colons and full stops.
 - Australian spelling and units in user-facing copy (categorise, cheque, $ AUD, Perth time by default).
 
@@ -38,7 +38,7 @@ Run a single file with `node --test test/<name>.test.mjs`. A change should come 
 
 ## Sign-off (DCO), no CLA
 
-There is no contributor licence agreement. Instead every commit carries a `Signed-off-by` line, which says you wrote the change or have the right to submit it under the project's licence (the Developer Certificate of Origin, https://developercertificate.org/). Add it with `git commit -s`:
+There is no contributor licence agreement. Every commit carries a `Signed-off-by` line instead. It says you wrote the change or have the right to submit it under the project's licence (the Developer Certificate of Origin, https://developercertificate.org/). Add it with `git commit -s`:
 
 ```
 Signed-off-by: Your Name <you@example.com>
@@ -48,7 +48,7 @@ Your contributions are licensed under the GNU Affero General Public License v3.0
 
 ## Reporting a security problem
 
-Do not open a public issue for a vulnerability. Open a private security advisory on the repository (Security tab, "Report a vulnerability"); see `SECURITY.md`. Include what you found and how to reproduce it, never real data.
+Do not open a public issue for a vulnerability. Open a private security advisory on the repository (Security tab, "Report a vulnerability"); see `SECURITY.md`. Include what you found and how to reproduce it. Leave out real data.
 
 ## Not financial or tax advice
 

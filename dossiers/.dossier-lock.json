@@ -1,0 +1,298 @@
+{
+  "version": 1,
+  "docs": {
+    "mint": {
+      "claims": {
+        "748f70562358": {
+          "text": "Needs Node 22 or newer, because `node:sqlite` ships inside it, and there is no npm install or build step.",
+          "line": 14,
+          "specs": [
+            "Dockerfile:1-3"
+          ],
+          "head": "79d7f8b15a2e214164dcffb1da0dbe5763989465",
+          "files": {
+            "Dockerfile": {
+              "path": "Dockerfile",
+              "blob": "69bfb5c07ac17cba562551bcc97ae95bd132b622",
+              "commit": "3819de86eac9da55773584d3b79483f1017f19d8",
+              "range": {
+                "start": 1,
+                "end": 3,
+                "hash": "8b929ae40456db9443175c1bd07174fc00b53abb"
+              }
+            }
+          }
+        },
+        "526f0b9bfd5c": {
+          "text": "The server is plain Node built-ins, `node:http` and `node:sqlite`, with a vanilla page in `public/`.",
+          "line": 15,
+          "specs": [
+            "server.mjs:2"
+          ],
+          "head": "79d7f8b15a2e214164dcffb1da0dbe5763989465",
+          "files": {
+            "server.mjs": {
+              "path": "server.mjs",
+              "blob": "283f50f24344d7f72dc98c7daf387c166b52d9fb",
+              "commit": "28d8da2e5ec93370e36d96bb5f8b188b0b9b84a6",
+              "range": {
+                "start": 2,
+                "end": 2,
+                "hash": "412b35138eb463caa7ed31c74d7bd61af3e321dc"
+              }
+            }
+          }
+        },
+        "c0d6b1cf9c0f": {
+          "text": "The book is one SQLite database, with money held as integer cents.",
+          "line": 16,
+          "specs": [
+            "lib/db.mjs:1-4"
+          ],
+          "head": "79d7f8b15a2e214164dcffb1da0dbe5763989465",
+          "files": {
+            "lib/db.mjs": {
+              "path": "lib/db.mjs",
+              "blob": "77572be5548b0b90e84b520dbdcb3d1d53b00ba3",
+              "commit": "0e03c097dc8f1f2ea402127939288c252b6ed679",
+              "range": {
+                "start": 1,
+                "end": 4,
+                "hash": "b97ce53228b05ac9784fede874bf2e75b8ca932e"
+              }
+            }
+          }
+        },
+        "c2ec00592a5c": {
+          "text": "The Redbark client only reads, and its key is never logged or sent off the API host.",
+          "line": 17,
+          "specs": [
+            "lib/redbark.mjs:1-4"
+          ],
+          "head": "79d7f8b15a2e214164dcffb1da0dbe5763989465",
+          "files": {
+            "lib/redbark.mjs": {
+              "path": "lib/redbark.mjs",
+              "blob": "8b3c0b1c74a28369aac796acab45f00c382e6788",
+              "commit": "0e03c097dc8f1f2ea402127939288c252b6ed679",
+              "range": {
+                "start": 1,
+                "end": 4,
+                "hash": "f31323feec115f41e22355d8a254f5f3afdd4b36"
+              }
+            }
+          }
+        },
+        "07d9adce816e": {
+          "text": "The Redbark poll runs every 30 minutes.",
+          "line": 18,
+          "specs": [
+            "lib/schedule.mjs:7"
+          ],
+          "head": "79d7f8b15a2e214164dcffb1da0dbe5763989465",
+          "files": {
+            "lib/schedule.mjs": {
+              "path": "lib/schedule.mjs",
+              "blob": "0eb6bb51236b2653eb1ac59fc33be953bb5ff272",
+              "commit": "0e03c097dc8f1f2ea402127939288c252b6ed679",
+              "range": {
+                "start": 7,
+                "end": 7,
+                "hash": "f20ffdac83ad308e869d77efae05965969bb9e64"
+              }
+            }
+          }
+        },
+        "a244bfdbca88": {
+          "text": "The demo needs no bank account, no key and no existing data: it runs a fake Redbark over invented data in a temp directory.",
+          "line": 19,
+          "specs": [
+            "scripts/demo-seed.mjs:1-4"
+          ],
+          "head": "79d7f8b15a2e214164dcffb1da0dbe5763989465",
+          "files": {
+            "scripts/demo-seed.mjs": {
+              "path": "scripts/demo-seed.mjs",
+              "blob": "03f420afa719374d01e7818e196fc2cb6c4235c3",
+              "commit": "0e03c097dc8f1f2ea402127939288c252b6ed679",
+              "range": {
+                "start": 1,
+                "end": 4,
+                "hash": "7798d30ffaeab0fa1b3aec96e9c77a988704b48e"
+              }
+            }
+          }
+        },
+        "fe4fef948902": {
+          "text": "CSV import has invented fixtures for the CommBank, ANZ, NAB, Westpac, ING and Macquarie layouts.",
+          "line": 20,
+          "specs": [
+            "test/fixtures/csv/commbank-split.csv",
+            "test/fixtures/csv/anz-split.csv",
+            "test/fixtures/csv/nab.csv",
+            "test/fixtures/csv/westpac.csv",
+            "test/fixtures/csv/ing.csv",
+            "test/fixtures/csv/macquarie.csv"
+          ],
+          "head": "79d7f8b15a2e214164dcffb1da0dbe5763989465",
+          "files": {
+            "test/fixtures/csv/commbank-split.csv": {
+              "path": "test/fixtures/csv/commbank-split.csv",
+              "blob": "d690362bdab21476f1d62d294e4c1e30a82b0d49",
+              "commit": "28d8da2e5ec93370e36d96bb5f8b188b0b9b84a6"
+            },
+            "test/fixtures/csv/anz-split.csv": {
+              "path": "test/fixtures/csv/anz-split.csv",
+              "blob": "d01806ac3733cc74d27b54624ea9d738545f456e",
+              "commit": "28d8da2e5ec93370e36d96bb5f8b188b0b9b84a6"
+            },
+            "test/fixtures/csv/nab.csv": {
+              "path": "test/fixtures/csv/nab.csv",
+              "blob": "7a09e58455152a723d1c05283c6fc222a0686991",
+              "commit": "28d8da2e5ec93370e36d96bb5f8b188b0b9b84a6"
+            },
+            "test/fixtures/csv/westpac.csv": {
+              "path": "test/fixtures/csv/westpac.csv",
+              "blob": "7f2b6830b32864c8889a08f3922e839b32b8bc0c",
+              "commit": "28d8da2e5ec93370e36d96bb5f8b188b0b9b84a6"
+            },
+            "test/fixtures/csv/ing.csv": {
+              "path": "test/fixtures/csv/ing.csv",
+              "blob": "81ebfbc83b80471876f26cf83162cd48b88f7ae7",
+              "commit": "28d8da2e5ec93370e36d96bb5f8b188b0b9b84a6"
+            },
+            "test/fixtures/csv/macquarie.csv": {
+              "path": "test/fixtures/csv/macquarie.csv",
+              "blob": "8c591dfaf0ff7f87d3fd57a165408c3a2b41f0ed",
+              "commit": "28d8da2e5ec93370e36d96bb5f8b188b0b9b84a6"
+            }
+          }
+        },
+        "341d1a97362d": {
+          "text": "Licensed under the GNU AGPL version 3.",
+          "line": 21,
+          "specs": [
+            "LICENSE:1-2"
+          ],
+          "head": "79d7f8b15a2e214164dcffb1da0dbe5763989465",
+          "files": {
+            "LICENSE": {
+              "path": "LICENSE",
+              "blob": "fe6b9036ba1818c79c15f802a586a9711ece2b97",
+              "commit": "c068364e5d5a048697ac57cb0dc8f6a02ffa52cd",
+              "range": {
+                "start": 1,
+                "end": 2,
+                "hash": "c56ec656fdfdf92717d3e6eb3d24452491f8645f"
+              }
+            }
+          }
+        },
+        "591517deecd5": {
+          "text": "Out of the box it listens on loopback only.",
+          "line": 25,
+          "specs": [
+            ".env.example:20-21"
+          ],
+          "head": "79d7f8b15a2e214164dcffb1da0dbe5763989465",
+          "files": {
+            ".env.example": {
+              "path": ".env.example",
+              "blob": "6f8409caa97a55e5b09e69aed2b61a3185ecf697",
+              "commit": "28d8da2e5ec93370e36d96bb5f8b188b0b9b84a6",
+              "range": {
+                "start": 20,
+                "end": 21,
+                "hash": "c07f0b28bccb8bb449dbd6f424140f42334114bd"
+              }
+            }
+          }
+        },
+        "ded43f17b926": {
+          "text": "Docker Compose publishes both the demo and the real service on the host's loopback.",
+          "line": 26,
+          "specs": [
+            "docker-compose.yml:19",
+            "docker-compose.yml:31"
+          ],
+          "head": "79d7f8b15a2e214164dcffb1da0dbe5763989465",
+          "files": {
+            "docker-compose.yml": {
+              "path": "docker-compose.yml",
+              "blob": "58bf76c0dc1f56712d9491c1a316414f5bd1cf57",
+              "commit": "3819de86eac9da55773584d3b79483f1017f19d8",
+              "range": {
+                "start": 19,
+                "end": 19,
+                "hash": "4128acfc5d047b237428778403f5fef8df6bba32"
+              }
+            },
+            "docker-compose.yml:31-31": {
+              "path": "docker-compose.yml",
+              "blob": "58bf76c0dc1f56712d9491c1a316414f5bd1cf57",
+              "commit": "3819de86eac9da55773584d3b79483f1017f19d8",
+              "range": {
+                "start": 31,
+                "end": 31,
+                "hash": "3d2b79bdcac735005cf549294779cc7952fc6b8e"
+              }
+            }
+          }
+        },
+        "82e94b44c351": {
+          "text": "CI runs the tests and the secret scan.",
+          "line": 27,
+          "specs": [
+            ".github/workflows/ci.yml:30",
+            ".github/workflows/ci.yml:32"
+          ],
+          "head": "79d7f8b15a2e214164dcffb1da0dbe5763989465",
+          "files": {
+            ".github/workflows/ci.yml": {
+              "path": ".github/workflows/ci.yml",
+              "blob": "14bad8d8df1f03b1b1f3eb0192ad6e28e3d811a6",
+              "commit": "79d7f8b15a2e214164dcffb1da0dbe5763989465",
+              "range": {
+                "start": 30,
+                "end": 30,
+                "hash": "6921e955df49e4e4625b7c88285f7d5adba5bb6c"
+              }
+            },
+            ".github/workflows/ci.yml:32-32": {
+              "path": ".github/workflows/ci.yml",
+              "blob": "14bad8d8df1f03b1b1f3eb0192ad6e28e3d811a6",
+              "commit": "79d7f8b15a2e214164dcffb1da0dbe5763989465",
+              "range": {
+                "start": 32,
+                "end": 32,
+                "hash": "b69f6d0318a5db9ad3176961d0f5ef3eebe9ff9b"
+              }
+            }
+          }
+        },
+        "90522b891366": {
+          "text": "Security reports go through GitHub private vulnerability reporting, not a public issue.",
+          "line": 28,
+          "specs": [
+            "SECURITY.md:5-9"
+          ],
+          "head": "79d7f8b15a2e214164dcffb1da0dbe5763989465",
+          "files": {
+            "SECURITY.md": {
+              "path": "SECURITY.md",
+              "blob": "1a857796a533d2bae67f2afaffe831486abfdba8",
+              "commit": "3819de86eac9da55773584d3b79483f1017f19d8",
+              "range": {
+                "start": 5,
+                "end": 9,
+                "hash": "4e55dde1cad6639070662179a522d56b29cfbf07"
+              }
+            }
+          }
+        }
+      },
+      "pinnedAt": "2026-11-02T13:41:50.941Z",
+      "head": "79d7f8b15a2e214164dcffb1da0dbe5763989465"
+    }
+  }
+}

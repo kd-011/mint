@@ -10,8 +10,11 @@ All notable changes to Mint are listed here. The format follows [Keep a Changelo
 - CSV statement import ([docs/csv-import.md](docs/csv-import.md)): delimiter, header row, signed or debit/credit amounts, date order and encoding are detected and shown in a preview before anything is saved. Layouts for CommBank, ANZ, NAB, Westpac, ING and Macquarie are tested against invented fixtures. Re-importing the same rows adds nothing, and an import is one undoable step.
 - Manual accounts in any currency, with a balance adjustment offered when a statement's closing balance differs from Mint's.
 - `scripts/export-public.mjs` updates a persistent public checkout with one new commit on top instead of writing a fresh single-commit repo each time. `--fresh` keeps the old behaviour. See [docs/maintainers.md](docs/maintainers.md).
+- The export now stops on any new or changed image or binary outside `scripts/export-allowlist.txt`, exiting 3 with the paths listed, and refuses to run without a denylist. The secret scan reads text and cannot see inside a picture.
+- A weekly upkeep job checks the links in the docs and the claims in `dossiers/mint.md`, and keeps one labelled issue per problem.
 
 ### Changed
+- CI also runs once a week. Dependabot is weekly, with grouped minor and patch updates and a 7 day cooldown. `actions/checkout` and `actions/setup-node` move to v7.
 - The demo (`node scripts/demo-seed.mjs`) is richer: a year of invented transactions, a home loan with a repayment plan, goals, shares, subscriptions and a manual account, with balances on every account. The README banner, hero, demo GIF and screenshots are regenerated from it, and contain no real data.
 - README: the known limits, FAQ and setup now describe `MINT_TZ` and the no-Redbark path.
 

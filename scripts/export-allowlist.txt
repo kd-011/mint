@@ -1,0 +1,24 @@
+# Images the export may add or change without a human opening them. One exact path per line: no
+# directories, no globs. Only list pictures drawn from invented data: the output of
+# scripts/gen-assets.mjs, the social preview made from its screenshots, and m-csv-import.png (taken
+# once from scripts/ui-fixture.mjs with an invented statement, gen-assets does not draw it). Never a
+# shot of a real book, and nothing from a design-pass folder. scripts/export-public.mjs reads this file
+# at the ref it exports and stops on any other new or changed image or binary.
+.github/social-preview.png
+docs/banner.png
+docs/demo.gif
+docs/hero.png
+docs/social-preview.png
+docs/screenshots/d-groceries.png
+docs/screenshots/d-home.png
+docs/screenshots/d-plan.png
+docs/screenshots/d-transactions.png
+docs/screenshots/m-bills.png
+docs/screenshots/m-csv-import.png
+docs/screenshots/m-groceries.png
+docs/screenshots/m-home.png
+docs/screenshots/m-plan.png
+docs/screenshots/m-reports.png
+docs/screenshots/m-save.png
+docs/screenshots/m-subs.png
+docs/screenshots/m-transactions.png

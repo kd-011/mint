@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Mint is deliberately small: one user, no npm dependencies, no build step. Ideas that fit that are welcome. Larger ones are best discussed here before any code is written. **Never post real financial data.**
+        Mint is deliberately small: one user, no npm dependencies, no build step. Ideas that fit that are welcome. Larger ones are best discussed here before any code is written. Never post real financial data.
   - type: textarea
     id: problem
     attributes:
