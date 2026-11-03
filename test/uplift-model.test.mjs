@@ -108,7 +108,7 @@ test('category suggestions: what the same merchant is filed under, then recents,
   assert.deepEqual(M.suggestCategories({ merchant: null, current: null, items, recent: [] }), []);
 });
 
-// ---------- layout rules that can be checked without a browser ----------
+// layout rules that can be checked without a browser
 import { readFileSync } from 'node:fs';
 const read = (f) => readFileSync(new URL(`../public/${f}`, import.meta.url), 'utf8');
 

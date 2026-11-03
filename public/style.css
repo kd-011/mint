@@ -1462,6 +1462,7 @@ body.locked{overflow:hidden}
 .lock-go[aria-busy="true"] .spin{display:block}
 .lock-go[aria-busy="true"] svg{display:none}
 .lock-foot{margin:18px 0 0;max-width:34ch;font-size:var(--fs-xs);color:var(--ink-3)}
+.lock[data-state="checking"] .lock-foot{visibility:hidden}
 @media (prefers-reduced-motion:reduce){.lock-card{animation:none}.lock-fp{animation:none!important}.lock.lock-out{transition:none}}
 /* Settings: the fingerprint list */
 .lk-row .ic{color:var(--accent)}

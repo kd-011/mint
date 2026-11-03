@@ -37,6 +37,7 @@ test('with no cached list and no connection the currency check says so instead o
   const { ff, fx } = setup();
   ff.state.offline = true;
   await assert.rejects(fx.checkCurrency('USD'), /couldn't load the currency list/i);
+  assert.equal(await fx.checkCurrency('aud'), 'AUD', 'an AUD account needs no rate, so Frankfurter being down must not stop it');
 });
 
 test('one range call covers every date of an import, and a weekend date takes the Friday rate', async () => {

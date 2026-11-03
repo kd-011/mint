@@ -151,7 +151,7 @@ async function viewAccount(el, token) {
   paintAll();
 }
 
-// ---------- config: the account's own settings ----------
+// config: the account's own settings
 
 // Nickname, personal or business, and whether it counts as spendable cash. These are the owner's settings on the
 // account (PATCH /api/accounts/:id); nothing here touches the bank connection or a balance.

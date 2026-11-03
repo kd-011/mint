@@ -8,7 +8,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const src = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'public', 'plan.js'), 'utf8');
-const body = src.slice(src.indexOf('function openGoalEditor('), src.indexOf('// ====================== debt'));
+const body = src.slice(src.indexOf('function openGoalEditor('), src.indexOf('\n// debt\n'));
 
 test('shared goal editor and contribution sheet reach paint, load and the list only through ctx', () => {
   assert.ok(body.includes('function openContribution('), 'both sheets are in the slice');

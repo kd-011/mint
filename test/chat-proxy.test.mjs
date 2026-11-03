@@ -23,7 +23,7 @@ const API_KEY = 'a'.repeat(40);
 const H = { 'remote-user': 'owner', 'x-mint-gate': GATE_KEY };
 const sse = (event, data) => `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
 
-// ---------- a fake assistant ----------
+// a fake assistant
 
 let assistant, assistantUrl;
 const seen = []; // what the fake received, minus nothing: the test checks the headers
@@ -77,7 +77,7 @@ function startAssistant() {
   });
 }
 
-// ---------- a real Mint server ----------
+// a real Mint server
 
 function startMint(env) {
   return new Promise((resolve, reject) => {
@@ -125,7 +125,7 @@ async function events(res) {
   return out;
 }
 
-// ---------- the proxy ----------
+// the proxy
 
 test('chat needs the sign-in gate like every other route', async () => {
   const r = await chat('stream please', { headers: {} });
@@ -319,7 +319,7 @@ test('the route is rate limited, and says when to try again', async () => {
   } finally { m.p.kill('SIGTERM'); }
 });
 
-// ---------- undo and confirm from the browser ----------
+// undo and confirm from the browser
 
 const door = (path, body) => fetch(`${base}/api/assistant${path}`, { method: 'POST', headers: { authorization: `Bearer ${API_KEY}`, 'content-type': 'application/json' }, body: JSON.stringify(body ?? {}) });
 const browser = (path, body = {}, headers = H) => fetch(`${base}/api/chat${path}`, { method: 'POST', headers: { ...headers, 'content-type': 'application/json' }, body: JSON.stringify(body) });

@@ -74,7 +74,7 @@ function demoMask(text) {
   return text.replace(/\b\d{3}[- ]\d{3}\b/g, '•••-•••').replace(/\d{4,}/g, '••••');
 }
 
-// ---- made-up balances for empty cash accounts ----
+// made-up balances for empty cash accounts
 // 0 x factor is still 0, so an empty account looks empty on a demo screen. A cash account (type transaction or
 // savings, the effective type) with a real balance under $1 shows a believable made-up one instead. Display only:
 // nothing is written and the real list is never touched; callers get copies. Never a loan, card, manual asset, or

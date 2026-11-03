@@ -11,7 +11,7 @@ const desktop = matchMedia('(min-width: 1024px)');
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const buzz = (ms = 8) => { try { navigator.vibrate?.(ms); } catch {} };
 
-// ---------- formatting ----------
+// formatting
 
 const AUD = new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' });
 const AUD0 = new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 });
@@ -93,7 +93,7 @@ const centsToInput = (c) => (c == null ? '' : (demoCents(c) / 100).toFixed(2));
 // A price per unit in dollars (not cents), scaled like the value it multiplies into.
 const unitPrice = (p, cur) => `${cur === 'USD' ? 'US$' : '$'}${Number(demoScale(Number(p), demo)).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 4 })}`;
 
-// ---------- icons ----------
+// icons
 
 const ic = (d, sw = 1.8) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const I = {
@@ -206,7 +206,7 @@ function wireCollapsibles(root) {
 // The header every summary card starts with: an icon tile, a title, and one small right-hand slot.
 const cardHead = (icon, title, right = '') => `<div class="card-h"><span class="card-ic">${icon}</span><h3 class="card-t">${esc(title)}</h3>${right ? `<span class="card-r">${right}</span>` : ''}</div>`;
 
-// ---------- storage ----------
+// storage
 
 const store = {
   get(k) { try { return JSON.parse(localStorage.getItem(`mint:${k}`)); } catch { return null; } },
@@ -220,12 +220,12 @@ const store = {
   del(k) { try { localStorage.removeItem(`mint:${k}`); } catch {} },
 };
 
-// ---------- optional chat ----------
+// optional chat
 // The in-app chat talks to an external assistant server and is off unless the server has MINT_CHAT_KEY set.
 // The server swaps the placeholder below for 'on' or 'off' when it serves this file; served raw it reads as off.
 const CHAT_ON = '__CHAT__' === 'on';
 
-// ---------- demo mode ----------
+// demo mode
 
 // Demo mode lives on this device only (localStorage, never sent anywhere): one
 // factor that scales every dollar, account numbers masked, writes refused. See
@@ -292,7 +292,7 @@ function bindDraft(root, key, { skip = [] } = {}) {
   return { restored, clear: () => drafts.clear(key) };
 }
 
-// ---------- network ----------
+// network
 
 class ApiError extends Error {
   constructor(headline, detail, extra = {}) { super(headline); this.detail = detail; Object.assign(this, extra); }
@@ -429,7 +429,7 @@ function queueChanged() {
   if (el) el.textContent = online ? '' : `Offline. Showing saved data${n ? `; ${plural(n, 'change')} waiting to sync` : '; changes sync when you are back'}.`;
 }
 
-// ---------- receipt queue (IndexedDB, photos are too big for localStorage) ----------
+// receipt queue (IndexedDB, photos are too big for localStorage)
 
 const receiptQueue = (() => {
   let dbp;
@@ -471,7 +471,7 @@ const receiptQueue = (() => {
   };
 })();
 
-// ---------- shared account state (Home, Accounts) ----------
+// shared account state (Home, Accounts)
 
 let accountsData = store.get('accounts');
 const accountsListeners = new Set();
@@ -529,7 +529,7 @@ function watchSync() {
   })();
 }
 
-// ---------- toasts ----------
+// toasts
 
 // toast('Saved'), toast('Failed: why', { error: true, action: { label: 'Retry', fn } })
 function toast(msg, { error = false, action = null, ms = null } = {}) {
@@ -581,7 +581,7 @@ function flushPending() {
 }
 addEventListener('pagehide', flushPending);
 
-// ---------- sheets ----------
+// sheets
 // #sheet is the main editor (a bottom sheet on phones, the right pane on
 // desktop); #modal sits above it for pickers and small forms on both.
 
@@ -740,7 +740,7 @@ document.addEventListener('pointerdown', (e) => {
 
 const sheetHead = (sub, title, right = '') => `<div class="sheet-head"><div class="sh-t">${sub ? `<div class="sub">${esc(sub)}</div>` : ''}<h3 class="t1">${esc(title)}</h3></div>${right}<button class="x" type="button" data-close aria-label="Close" title="Close">${I.x}</button></div>`;
 
-// ---------- view building blocks ----------
+// view building blocks
 
 const skRow = '<div class="sk-row"><div class="sk sk-ic"></div><div class="main"><div class="sk sk-l"></div><div class="sk sk-s"></div></div><div class="sk sk-a"></div></div>';
 const skeletonRows = (n) => `<div class="rows">${skRow.repeat(n)}</div>`;
@@ -862,7 +862,7 @@ function wireSeg(root, name, onPick) {
   return () => $('button[aria-checked="true"]', seg)?.dataset.v;
 }
 
-// ---------- category picker (modal) ----------
+// category picker (modal)
 
 // Resolves to a category id, null (clear it), or undefined (dismissed).
 function pickCategory({ title = 'Category', selected = null, kinds = null, allowClear = false, allowNew = true } = {}) {
@@ -934,7 +934,7 @@ function newCategoryForm(prefill = '') {
   });
 }
 
-// ---------- chips and small widgets ----------
+// chips and small widgets
 
 const switchHtml = (attr, id, on, label, title) => `<button class="switch" type="button" role="switch" aria-checked="${on ? 'true' : 'false'}" ${attr}="${esc(id)}" aria-label="${esc(label)}" title="${esc(title)}"><span class="track"><span class="knob"></span></span></button>`;
 

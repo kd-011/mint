@@ -50,7 +50,7 @@ function mountHomeSync(slot, token) {
   });
 }
 
-// ---------- pull to refresh ----------
+// pull to refresh
 
 function initPullToRefresh() {
   const el = document.createElement('div');

@@ -110,11 +110,11 @@ systemctl --user enable --now mint
 loginctl enable-linger "$USER"
 ```
 
-Run `node scripts/backup.mjs` daily from a timer. See the Backup section of the README.
+Run `node scripts/backup.mjs` daily from a timer. See [Backup and restore](#backup-and-restore).
 
 ## Docker
 
-The repository ships a `Dockerfile` and a `docker-compose.yml`. The image is `node:22-alpine` plus the source: no npm install and no build. It runs as the unprivileged `node` user, keeps its data in the `/data` volume and has a healthcheck on `/healthz`.
+The repository ships a `Dockerfile` and a `docker-compose.yml`. The image is `node:22-alpine` plus the source: no npm install and no build step. Compose pulls `ghcr.io/kd-011/mint:latest` when it can and builds from your checkout when it cannot. It runs as the unprivileged `node` user, keeps its data in the `/data` volume and has a healthcheck on `/healthz`.
 
 Demo, with invented data and no Redbark key:
 
@@ -122,9 +122,21 @@ Demo, with invented data and no Redbark key:
 docker compose up
 ```
 
-Open <http://127.0.0.1:8980/> (use `127.0.0.1`, not `localhost`). It is published on the host's loopback only, and `docker compose down` throws the data away.
+Open <http://127.0.0.1:8980/>. It is published on the host's loopback only, and `docker compose down` throws the data away.
 
-Your own book:
+Your own book, on this machine only, with no login proxy:
+
+```sh
+MINT_TZ=Australia/Sydney docker compose --profile local up -d local
+```
+
+Open <http://127.0.0.1:8981/>. The book is in the `mint-data` volume. It survives a stop, a restart and an upgrade, and only `down -v` deletes it. Without Docker, `node scripts/local.mjs` does the same with the book in `data/`.
+
+Local mode runs the real server behind a small front (`lib/localfront.mjs`) that adds the gateway headers for you. The front only answers requests addressed to `127.0.0.1` or `localhost`, so another website or a rebound DNS name gets a 403, and the fingerprint lock is off. Anyone with an account on the machine can open that port, so use it on a machine that is yours. For a phone, move to a login proxy: stop `local` and start `mint` as below. Both use the same volume, so the book comes with you. Run one or the other.
+
+Back it up with `docker compose --profile local exec local node scripts/backup.mjs`, which writes a snapshot under `/data/backups`. Copy it out with `docker compose --profile local cp local:/data/backups ./mint-backups`.
+
+Your own book behind a login proxy:
 
 ```sh
 cp .env.example .env
@@ -147,4 +159,33 @@ git pull
 systemctl --user restart mint     # or: docker compose --profile real up -d --build mint
 ```
 
+With local mode, `git pull`, then `docker compose --profile local up -d --build local`. `--build` makes the image from your checkout, so it always matches what you pulled.
+
 Read the release notes before a minor version bump.
+
+## Configuration
+
+Everything is an environment variable, read from `.env` next to `server.mjs` or from the real environment. `.env.example` lists every one with a comment. The ones you will touch:
+
+| Variable | What it does |
+| --- | --- |
+| `REDBARK_API_KEY` | Optional. Your Redbark key. Unset, there is no bank feed: manual accounts and CSV import only. |
+| `MINT_GATE_KEY` | Required. Shared secret your proxy sends as `X-Mint-Gate` (32+ characters). |
+| `MINT_TZ` | Your timezone as an IANA name, for example `Australia/Sydney`. Default `Australia/Perth`. See [Timezone](#timezone). |
+| `MINT_USER` | Login name your proxy sends as `Remote-User`. Default `owner`. |
+| `MINT_ORIGIN` | The https origin you serve Mint from. Default `http://localhost:<port>`. |
+| `MINT_PORT` | Listen port on 127.0.0.1. Default 8970. |
+| `MINT_HOME` | Folder for `data/`, `backups/` and `.env`. Default: the code folder. |
+| `MINT_LOCK` | `off` disables the fingerprint lock, until a fingerprint is enrolled. |
+| `OPENROUTER_API_KEY` | Optional. Lets a model categorise merchants Mint cannot place. See the [FAQ](faq.md#what-does-the-ai-categoriser-send) for what is sent. |
+| `WISE_API_TOKEN`, `ALPHAVANTAGE_API_KEY` | Optional. Wise balances, US share prices. |
+| `MINT_BACKUP_*` | Optional. Encrypted off-box backups. |
+
+## Backup and restore
+
+Your data is `data/mint.db` plus `data/receipts/`.
+
+- `node scripts/backup.mjs` writes a consistent snapshot to `backups/mint-<date>.db` and keeps the newest 14. Run it daily from cron or a systemd timer.
+- Set `MINT_BACKUP_HOST` (an ssh host from `~/.ssh/config`) and `MINT_BACKUP_AGE_RECIPIENT` (an [age](https://age-encryption.org) public key) and the same script also copies a gzipped, age-encrypted snapshot and an encrypted receipts mirror there. Keep the private key off the same disk.
+- `node scripts/restore-test.mjs` pulls the newest off-box copy, decrypts it, checks integrity and compares row counts.
+- To restore: stop Mint, copy a snapshot over `data/mint.db`, delete any `mint.db-wal` and `mint.db-shm` beside it, start Mint. If you lose your phone or passkey, `node scripts/lock-reset.mjs --yes` clears the enrolled fingerprints.

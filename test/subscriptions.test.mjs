@@ -239,7 +239,7 @@ test('a state on a Play Store service survives the next charge arriving under a 
   assert.ok(recurringKeys(b.db, '2026-10-01').has('google testtune app'));
 });
 
-// ---------- the API ----------
+// the API
 
 let srv, base, ab;
 before(async () => {

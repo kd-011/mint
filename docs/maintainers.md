@@ -22,7 +22,9 @@ CI runs the same three on every push and pull request, and once a week (`.github
 
 ## Releases
 
-Tag `vX.Y.Z` on `main` and write the release notes by hand: what works, what is rough, how to try the demo. There are no binaries to attach. First move the `Unreleased` entries in `CHANGELOG.md` under the new version and date.
+Add a `## [x.y.z] - YYYY-MM-DD` section to `CHANGELOG.md` and let the export carry it to the public `main`. `.github/workflows/release.yml` compares that version with the tags (`scripts/release-plan.mjs`). If it is new, the workflow runs the tests, starts the image and reads the demo through it, pushes `ghcr.io/kd-011/mint` for amd64 and arm64 as `x.y.z` and `latest`, then makes the tag and a GitHub Release from that section. Re-running a failed run finishes what is left. Actions > release > Run workflow pushes the image again for the current version.
+
+It uses only the run's own token. GitHub makes a new package private on first publish, so the first time, open the package's settings on GitHub and set it public. Until then `docker compose up` falls back to building from source.
 
 ## Keeping a private working copy in sync
 
@@ -35,10 +37,10 @@ The public repository keeps real history. Each update is one new commit on top o
 Run it from the private repository, on the commit you want to publish. The public checkout is `~/exports/mint-public` unless you pass `--out`. It is an ordinary clone of the public repository on `main`.
 
 ```sh
-node scripts/export-public.mjs            # one new commit, left ready
+node scripts/export-public.mjs --message "Fix the rollover bug"   # one new commit, left ready
 git -C ~/exports/mint-public log -1 --stat
 git -C ~/exports/mint-public diff HEAD~1  # read it
-node scripts/export-public.mjs --push     # pushes the ready commit (or make a new one and push it)
+node scripts/export-public.mjs --push     # pushes the ready commit
 ```
 
 What the script does:
@@ -49,7 +51,7 @@ What the script does:
 4. Scans the whole tree and every unpushed commit, message included. Any finding at any step puts the checkout back exactly as it was, commits nothing, and prints `file:line kind`, never the matched text.
 5. Does nothing, and says so, when the tree already matches. With `--push` it still pushes a commit an earlier run left unpushed.
 
-The commit message lists the private commit subjects since the last export (merge commits are skipped, and a subject the scan flags is left out). The private sha of the last export lives in `<checkout>/.git/mint-export-state.json`. It is inside `.git`, so it never reaches the public tree or a push. `--from <sha>` overrides it, and with no state file the script lists private commits newer than the checkout's last commit. A checkout started with `--fresh` records it too.
+`--message` is the public commit message, so write it for a public reader: a short imperative subject, and a sentence on why if it is not obvious. The final scan covers it. The private sha of the last export lives in `<checkout>/.git/mint-export-state.json`. It is inside `.git`, so it never reaches the public tree or a push.
 
 ### The image gate
 

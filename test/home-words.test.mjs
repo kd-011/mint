@@ -13,7 +13,7 @@ const m = (c) => `${c < 0 ? '-' : ''}$${(Math.abs(c) / 100).toLocaleString('en-U
 const day = (iso) => ({ '2026-10-20': 'Tue 20 Oct', '2026-10-21': 'Wed 21 Oct', '2026-10-19': 'Mon 19 Oct' }[iso] ?? iso);
 const fmt = { money: m, money0: m0, day, today: '2026-10-19' };
 
-// ---------- the pay-cycle card ----------
+// the pay-cycle card
 
 const cyc = { open: true, day: 13, days: 14, days_left: 1 };
 
@@ -76,7 +76,7 @@ test('category rows: more over than shown, a zero budget and empties', () => {
   assert.equal(z.rows[0].over, true);
 });
 
-// ---------- balance tiles ----------
+// balance tiles
 
 test('balance tiles: the totals under net worth, in order, zero ones left out, each with a link', () => {
   const t = M.balanceTiles({ cash: 3400000, cards: -50000, loans: -40000000, investments: 900000, other_assets: 0, other_liabilities: -20000 });

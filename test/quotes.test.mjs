@@ -167,7 +167,7 @@ test('the call budget spreads over the day: more tickers than the cap allows wid
   assert.equal((await q.refresh()).fetched, 8);
 });
 
-// ---------- adapters ----------
+// adapters
 
 const jsonRes = (body, status = 200) => ({ ok: status < 300, status, json: async () => body, text: async () => JSON.stringify(body) });
 
@@ -209,7 +209,7 @@ test('Frankfurter: AUD per USD', async () => {
   await assert.rejects(createFrankfurter({ fetch: async () => jsonRes({ rates: {} }) }).rate('USD'), /rate/i);
 });
 
-// ---------- Yahoo Finance and per-exchange routing ----------
+// Yahoo Finance and per-exchange routing
 
 const yahooBody = (meta, closes) => ({ chart: { result: [{ meta, indicators: { quote: [{ close: closes ?? [] }] } }], error: null } });
 

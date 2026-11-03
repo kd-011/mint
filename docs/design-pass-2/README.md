@@ -2,13 +2,13 @@
 
 > The before and after screenshots this note describes are not in the public repository (about 17 MB each). Regenerate them: `node scripts/ui-fixture.mjs 8991 --browse`, then `node scripts/ui-shots.mjs <dir> --base http://127.0.0.1:8991` (see the header of `scripts/ui-shots.mjs` for the browser it needs).
 
-2026-10-21. Three lenses over the whole app: Emil (motion, press, the invisible details), Impeccable (audit, then polish) and Apple (HIG: clarity, deference, depth, springs). No data, API, maths or route changed, and nothing the owner removed from Home came back.
+A pass over the whole app for motion, press states and polish. No data, API, maths or route changed, and nothing removed earlier from Home came back.
 
 `before/` and `after/` hold every screen at 390x844 (`m-`, shot at 2x) and 1440x900 (`d-`): home, transactions, budgets, reports, income, save, plan, assets, accounts, rules, owed, subs, tax, account, more, settings, the three empty states, not found, the transaction sheet, search, chat, a filter dropdown and the lock screen. Made with `node scripts/ui-shots.mjs <dir>` against `scripts/ui-fixture.mjs`. The script also checks each screen for horizontal scroll, targets under 44px and clipped text, and found none at either size. It lists two things that are not defects: the Transactions swipe actions (36px tall at rest behind their row, 50px when swiped open) and the desktop filter buttons (36px under a fine pointer, by design).
 
 The screens that visibly differ: `m-owed`, `m-save`, `m-sheet-tx` and `d-sheet-tx` (grabber), `m-chat` (suggestion chips), `m-rules`. Most of the rest is motion, which a still cannot show. The last section has the checks.
 
-## Emil: motion
+## Motion
 
 | Before | After | Why |
 | --- | --- | --- |
@@ -28,7 +28,7 @@ The screens that visibly differ: `m-owed`, `m-save`, `m-sheet-tx` and `d-sheet-t
 
 New tokens, all in `:root` and the README Design system: `--press`, `--press-icon`, `--dur-4`, `--dur-out`, `--ease-drawer`, `--ease-spring`, `--grabber`.
 
-## Impeccable: audit, then polish
+## Audit, then polish
 
 Audit (technical): a11y 3, performance 4 (transform and opacity only, `content-visibility` on long lists), theming 4 (no literal colours in components), responsive 4, integrity 3 (token drift in motion only). The detector's only finding was a "bounce easing" warning on the name `--spring`, which is an exponential ease-out. The README now says so.
 
@@ -42,7 +42,7 @@ Audit (technical): a11y 3, performance 4 (transform and opacity only, `content-v
 | Multi-line headings and empty-state copy left a single word on the last line | `text-wrap: balance` on headings, `pretty` on secondary copy |
 | `color-scheme` only on a meta tag and date inputs | `color-scheme: dark` on `html`, so scrollbars and native controls follow |
 
-## Apple: three moves, done properly
+## Three moves borrowed from Apple's guidelines
 
 1. The dock pill. One pill under the active tab, driven by an index and a `linear()` spring with 8% overshoot, in the phone dock and (vertical) in the desktop rail. It slides from either direction and can be retargeted mid-flight. Measured: 46px at 40ms, 99px at 120ms, settled at 92px.
 2. Sheets like iOS. Full-height slide from the bottom on the drawer curve, a visible grabber, the scrim following the finger, and a spring settle on release (the flick and rubber-band logic was already there).
@@ -50,7 +50,7 @@ Audit (technical): a11y 3, performance 4 (transform and opacity only, `content-v
 
 Not done: large titles that collapse on scroll. The owner's standing rule is no page headers or subtitles, and the top bar was removed on purpose, so a title would bring back the header he took out. The More screens already carry the iOS inline pattern (back label, centred title). Detents on sheets were also left out. Sheets are editors, and a half-height detent would be new behaviour, not polish.
 
-## web-design-guidelines check
+## Web interface guidelines check
 
 Run on the touched CSS and scripts. Passes: reduced motion honoured, only `transform` and `opacity` animated, no `transition: all`, interruptible motion, `touch-action`, `overscroll-behavior` on sheets, `color-scheme`, tabular numerals, safe-area insets, `:focus-visible`, virtualised long lists, icon-only controls spot-checked for labels. Added from it: `touch-action: manipulation`, `text-wrap`, `color-scheme`. Left alone: the three-dot ellipses in loading copy (`Saving...`), which is house style across the app.
 

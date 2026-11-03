@@ -148,7 +148,7 @@ test('the factor is never sent to the server: storage is the only place it lives
   assert.deepEqual(a.calls, []);
 });
 
-// ---------- the write choke point ----------
+// the write choke point
 
 test('demo on: a write through api() never reaches fetch and says why', async () => {
   const { run, calls, get } = boot(ON(2));
@@ -278,7 +278,7 @@ test('a real draft typed before demo is kept, hidden while demo is on, and back 
   assert.deepEqual(JSON.parse(JSON.stringify(run(`drafts.get('goal:new')`))), { target: '1000.00' });
 });
 
-// ---- made-up balances for empty cash accounts (core.js side) ----
+// made-up balances for empty cash accounts (core.js side)
 
 const seedAccounts = () => ({ accounts: [
   { id: 'spend', type: 'transaction', balance_current: 250000, hidden: 0 },

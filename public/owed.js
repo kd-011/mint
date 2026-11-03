@@ -17,7 +17,7 @@ async function viewOwed(el, token) {
   let first = true;
   const live = () => token === renderToken;
 
-  // ----- state -----
+  // state
   const cacheIt = () => store.set('c:/api/owed', { d: data, at: Date.now() });
   const setItems = (items) => {
     const today = todayIso();
@@ -31,7 +31,7 @@ async function viewOwed(el, token) {
   const find = (id) => data.items.find((d) => d.id === id);
   const usedOf = (txId) => data.items.reduce((s, d) => s + d.payments.filter((p) => p.transaction_id === txId).reduce((t, p) => t + p.amount, 0), 0);
 
-  // ----- drawing -----
+  // drawing
   // What is left between the owner and this person: net above zero they owe him.
   const personOpen = (p) => p.open_count + p.owe_open_count;
   const personRow = (p) => {
@@ -75,7 +75,7 @@ async function viewOwed(el, token) {
     if (openKey) sheetRefresh();
   }
 
-  // ----- the person sheet -----
+  // the person sheet
   function debtCard(d) {
     const pend = d.id < 0;
     const pct = Math.min(100, Math.round((d.repaid / d.amount) * 100));
@@ -122,7 +122,7 @@ async function viewOwed(el, token) {
     wireSheet($('#owedbody'));
   }
 
-  // ----- sending a write -----
+  // sending a write
   // Applies the change on screen, sends it (or queues it offline), and puts the
   // screen back with the real error if the server says no. Resolves true on success.
   async function send(form, btn, busy, { apply, op, done }) {
@@ -143,7 +143,7 @@ async function viewOwed(el, token) {
     }
   }
 
-  // ----- add or edit a debt -----
+  // add or edit a debt
   function openDebtForm(d, preset = {}) {
     const key = `owed:${d ? `edit:${d.id}` : 'new'}`;
     const names = data.names.slice(0, 8);
@@ -197,7 +197,7 @@ async function viewOwed(el, token) {
     });
   }
 
-  // ----- a repayment, optionally linked to a bank deposit -----
+  // a repayment, optionally linked to a bank deposit
   function openPayForm(d, linked = null) {
     const key = `owed:pay:${d.id}`;
     const mine = !owesYou(d);
@@ -279,7 +279,7 @@ async function viewOwed(el, token) {
     load2('');
   }
 
-  // ----- actions on a debt -----
+  // actions on a debt
   function setClosed(d, closed, label) {
     const was = data;
     undoable({
@@ -342,7 +342,7 @@ async function viewOwed(el, token) {
     });
   }
 
-  // ----- loading -----
+  // loading
   const load = () => swr('/api/owed', (d) => { if (!live()) return; data = d; paint(); }).catch((e) => {
     if (!live()) return;
     el.innerHTML = errorCard(e, 'owedretry', 'the ledger');

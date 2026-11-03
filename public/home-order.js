@@ -113,7 +113,7 @@ function hoMount(box, { getList, applyLocal, repaint, alive }) {
   const secIds = (sec) => hoIds(sec);
   const withSection = (sec, nextSec) => current().map((id) => (secIds(sec).includes(id) ? nextSec.shift() : id));
 
-  // ---- buttons ----
+  // buttons
   box.addEventListener('click', (e) => {
     const t = e.target.closest('[data-reorder], [data-move], [data-retry]');
     if (!t) return;
@@ -146,7 +146,7 @@ function hoMount(box, { getList, applyLocal, repaint, alive }) {
     if (moved && !hoReduced()) { moved.classList.remove('moved'); void moved.offsetWidth; moved.classList.add('moved'); }
   });
 
-  // ---- drag ----
+  // drag
   box.addEventListener('pointerdown', (e) => {
     const grip = e.target.closest('[data-grip]');
     if (!grip || (e.pointerType === 'mouse' && e.button !== 0)) return;

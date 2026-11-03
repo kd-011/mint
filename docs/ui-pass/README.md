@@ -1,4 +1,4 @@
-# UI pass, 2026-10-20
+# UI pass
 
 Whole-app pass: one design system in `public/style.css` (see README "Design system"), applied to every screen. Shots are before (left) and after (right), with invented fixture data only.
 

@@ -2,10 +2,13 @@
 
 | Read this | When |
 | --- | --- |
-| [../README.md](../README.md) | What Mint is, the 30 second demo, the FAQ and the known limits |
+| [../README.md](../README.md) | What Mint is, the demo, your own book, when not to use it |
+| [features.md](features.md) | Everything it does, with pictures, and how it fits together |
+| [comparison.md](comparison.md) | Mint against Actual Budget, Firefly III, PocketSmith and Lunch Money |
+| [faq.md](faq.md) | Where your data goes, security, the known limits |
 | [redbark-setup.md](redbark-setup.md) | Getting a Redbark API key and connecting your banks |
 | [csv-import.md](csv-import.md) | Using Mint without Redbark: manual accounts and importing bank CSV statements |
-| [self-hosting.md](self-hosting.md) | The login gateway, reverse proxy recipes, Docker, systemd, updating |
+| [self-hosting.md](self-hosting.md) | Local mode, the login gateway, reverse proxy recipes, Docker, systemd, configuration, backups, updating |
 | [reference.md](reference.md) | Engineering notes: the engine, every API route, the design system |
 | [maintainers.md](maintainers.md) | Releases, and how the public repository is kept in sync |
 | [../CHANGELOG.md](../CHANGELOG.md) | What changed in each release |

@@ -203,7 +203,7 @@ test('weekly brief: the summary line plus anything odd', () => {
   assert.ok(w.odd.some((t) => /Test Luxury Goods/.test(t)));
 });
 
-// ---------- HTTP: key auth, loopback only, narrow surface ----------
+// HTTP: key auth, loopback only, narrow surface
 
 const KEY = 'mint_test_key_0123456789abcdef0123456789abcdef';
 let proc, base, fakeSrv;
@@ -375,4 +375,23 @@ test('http: the server refuses a short key at startup', async () => {
   });
   assert.ok(s.code !== undefined && s.code !== 0, s.out());
   assert.match(s.out(), /MINT_API_KEY/);
+});
+
+test('http: MINT_API_ALIAS reaches the same door under the same rules', async () => {
+  const s = await start({ MINT_HOME: mkdtempSync(join(tmpdir(), 'mint-assistant-')), MINT_PORT: '0', MINT_GATE_KEY: GATE_KEY, MINT_SCHEDULER: 'off', MINT_LOCK: 'off', MINT_USER: 'owner', MINT_API_KEY: KEY, MINT_API_ALIAS: '/api/old-door' });
+  assert.ok(s.url, s.out());
+  try {
+    assert.equal((await fetch(`${s.url}/api/old-door/summary`, { headers: bearer() })).status, 200);
+    assert.equal((await fetch(`${s.url}/api/old-door/summary`)).status, 401);
+    assert.equal((await fetch(`${s.url}/api/old-door/summary`, { headers: bearer('wrong-key-wrong-key-wrong-key-wrong') })).status, 401);
+    assert.equal((await fetch(`${s.url}/api/old-door/confirm/abcdefghijkl`, { method: 'POST', headers: bearer() })).status, 403);
+    assert.equal((await fetch(`${s.url}/api/old-doorway/summary`, { headers: bearer() })).status, 403, 'a longer path is not the alias');
+  } finally { s.p.kill('SIGTERM'); }
+});
+
+test('http: a MINT_API_ALIAS that is not /api/name stops the server', async () => {
+  const s = await start({ MINT_HOME: mkdtempSync(join(tmpdir(), 'mint-assistant-')), MINT_PORT: '0', MINT_GATE_KEY: GATE_KEY, MINT_SCHEDULER: 'off', MINT_LOCK: 'off', MINT_USER: 'owner', MINT_API_KEY: KEY, MINT_API_ALIAS: '/' });
+  assert.ok(!s.url);
+  assert.match(s.out(), /MINT_API_ALIAS must look like/);
+  s.p.kill('SIGTERM');
 });

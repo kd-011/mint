@@ -55,7 +55,7 @@ try { TZ = assertZone(process.env.MINT_TZ); } catch (e) {
 // Optional. Without it there is no bank feed: manual accounts and CSV statement import work as normal, the
 // 30 minute poll and the nightly reconcile stay off, and the page hides every Redbark prompt (see the start-up line).
 const KEY = (process.env.REDBARK_API_KEY ?? '').trim();
-// The assistant's server-to-server key (step 4). Optional: unset, the bearer door is shut.
+// The assistant's server-to-server key. Optional: unset, the bearer door is shut.
 // Set, it must be long enough to be a key. It only ever opens /api/assistant/ and
 // only for a direct loopback caller (see lib/apikey.mjs).
 const API_KEY = (process.env.MINT_API_KEY ?? '').trim();
@@ -63,7 +63,14 @@ if (API_KEY && API_KEY.length < MIN_KEY_LENGTH) {
   console.error(`MINT_API_KEY must be at least ${MIN_KEY_LENGTH} characters, refusing to start`);
   process.exit(1);
 }
-// The gate's shared secret. the login proxy adds it to every request it proxies as
+// A client that cannot change its URLs can keep its own path to the door. The alias only ever
+// maps onto /api/assistant/, so it opens nothing the key and the gate do not already allow.
+const API_ALIAS = (process.env.MINT_API_ALIAS ?? '').trim();
+if (API_ALIAS && !/^\/api\/[a-z0-9-]+$/.test(API_ALIAS)) {
+  console.error('MINT_API_ALIAS must look like /api/name, refusing to start');
+  process.exit(1);
+}
+// The gate's shared secret. The login proxy adds it to every request it proxies as
 // X-Mint-Gate (header_up from an env file), so a Remote-User that did not come
 // through the gate, say a tunnel pointed straight at this port, is refused.
 // Same rules as MINT_API_KEY: 32+ characters or the server will not start.
@@ -211,7 +218,7 @@ const webhook = createWebhookHandler({
   onConnections: () => queueSync({}),
 });
 
-// ---------- static shell ----------
+// static shell
 
 const PUBLIC = join(ROOT, 'public');
 const TYPES = {
@@ -247,7 +254,7 @@ const OPEN = new Set(['/manifest.webmanifest', '/sw.js', '/icon.svg', '/icon-192
 const LOCK_OPEN = new Set(['/api/lock/status', '/api/lock/challenge', '/api/lock/verify', '/api/lock/register-challenge', '/api/lock/register-verify', '/api/lock/lock']);
 
 
-// ---------- helpers ----------
+// helpers
 
 
 
@@ -281,7 +288,7 @@ const badUnlocks = failCounter(20);
 const safeIp = (req) => clientIp(req).replace(/[^\w.:-]/g, '');
 const unlocked = (req) => !LOCK_ON || !!lock.session(readCookie(req.headers.cookie));
 
-// ---------- read models ----------
+// read models
 
 function accountsPayload() {
   const rows = db.prepare(`SELECT a.*,
@@ -315,7 +322,7 @@ function accountsPayload() {
 }
 
 
-// ---------- the fingerprint lock ----------
+// the fingerprint lock
 
 const LOCK_STATUS = { credential: 404, last: 409, duplicate: 409, locked: 423 };
 async function lockRoute(req, res, pathname, method) {
@@ -394,7 +401,7 @@ async function lockRoute(req, res, pathname, method) {
   throw new HttpError(404, 'no such endpoint');
 }
 
-// ---------- routes ----------
+// routes
 
 async function route(req, res, url) {
   const { pathname } = url;
@@ -488,6 +495,7 @@ async function route(req, res, url) {
 const server = createServer(async (req, res) => {
   let url;
   try { url = new URL(req.url, 'http://localhost'); } catch { return send(res, 400, { error: 'bad url' }); }
+  if (API_ALIAS && url.pathname.startsWith(`${API_ALIAS}/`)) url.pathname = `/api/assistant/${url.pathname.slice(API_ALIAS.length + 1)}`;
   try {
     const presented = parseBearer(req.headers.authorization);
     if (presented !== null) {
@@ -526,7 +534,7 @@ const server = createServer(async (req, res) => {
   }
 });
 
-// ---------- scheduler ----------
+// scheduler
 // Poll every 30 minutes (first run backfills each account's full history),
 // reconcile nightly at 02:40 local time (lib/schedule.mjs): a 120 day re-walk, balances and loan
 // details into today's snapshot row. Every poll also refreshes today's row.

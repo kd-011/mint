@@ -24,7 +24,7 @@ const app = read('public/app.js');
 const rootEnd = css.indexOf('}', css.indexOf(':root{'));
 const body = css.slice(rootEnd);
 
-// ---------- the ticker ----------
+// the ticker
 
 test('tickValue runs from the old figure to the new one and eases out', () => {
   assert.equal(M.tickValue(1000, 5000, 0), 1000);
@@ -63,7 +63,7 @@ test('core.js ticks from the figure last shown and every hero figure has a key',
   }
 });
 
-// ---------- tokens ----------
+// tokens
 
 test('the new motion tokens exist and are documented in the reference design system notes', () => {
   for (const t of ['--press', '--press-icon', '--ease-drawer', '--ease-spring', '--dur-out', '--dur-4', '--grabber']) {
@@ -94,7 +94,7 @@ test('durations in component rules are tokens (loops are the exception)', () => 
   assert.ok(!/style\.transition = '[^']*(?<![-\w])\.?\d+m?s\b/.test(core), 'no literal transition set from script');
 });
 
-// ---------- reduced motion ----------
+// reduced motion
 
 test('reduced motion drops movement but keeps fades, spinners and skeletons visible', () => {
   assert.ok(!/\.01ms/.test(css), 'a 0.01ms kill freezes the spinner and the skeleton shimmer');
@@ -104,7 +104,7 @@ test('reduced motion drops movement but keeps fades, spinners and skeletons visi
   assert.match(reduce, /--press:\s*1/, 'no press scale under reduced motion');
 });
 
-// ---------- sheets, toasts, palette ----------
+// sheets, toasts, palette
 
 test('sheets slide from the bottom on the drawer curve and leave faster than they arrive', () => {
   assert.match(css, /@keyframes sheet-in\{from\{transform:translateY\(100%\)\}/);
@@ -128,7 +128,7 @@ test('the keyboard palette opens with no animation, the tap one keeps it', () =>
   assert.match(css, /#palette\.instant \.panel,#palette\.instant \.scrim\{animation:none\}/);
 });
 
-// ---------- the dock ----------
+// the dock
 
 test('the dock has one pill that slides to the active tab on the spring', () => {
   assert.match(app, /nav\.style\.setProperty\('--i'|\$\('#nav'\)\.style\.setProperty\('--i'/);
@@ -136,7 +136,7 @@ test('the dock has one pill that slides to the active tab on the spring', () => 
   assert.match(css, /#nav a\.on\{[^}]*background:none/);
 });
 
-// ---------- fixes found by the audit ----------
+// fixes found by the audit
 
 test('the ledger hero lines read as sentences, with a gap between figure and words', () => {
   assert.match(css, /\.owed-hero \.split\{/);
@@ -153,7 +153,7 @@ test('decorative loops are gone from empty states', () => {
   assert.ok(!/@keyframes float/.test(css));
 });
 
-// ---------- reduced motion, ordering and transforms ----------
+// reduced motion, ordering and transforms
 
 const reduceStart = css.indexOf('/* Reduced motion means less, not nothing.');
 const reduceBlock = css.slice(reduceStart);
@@ -177,7 +177,7 @@ test('reduced motion also stops the transform transitions and the drawn line', (
   assert.match(reduceBlock, /\.vline\{animation:none;stroke-dashoffset:0\}/);
 });
 
-// ---------- the sheet drag ----------
+// the sheet drag
 
 test('letting go of a short pull settles the sheet without replaying its entry animation', () => {
   const drag = core.slice(core.indexOf('// Drag the grab handle'), core.indexOf('const sheetHead'));
@@ -199,7 +199,7 @@ test('a long pull slides out from the dragged offset, and a fresh open or a plai
   assert.match(drag, /reduceMotion\.matches \? '' : null/, 'reduced motion settles with no transition');
 });
 
-// ---------- redesign 3: quiet glass ----------
+// redesign 3: quiet glass
 
 test('controls are filled, not outlined in green, and selected ones are tinted without an outline', () => {
   assert.match(css, /--ctl-edge:var\(--hair\)/);

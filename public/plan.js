@@ -26,7 +26,7 @@ function sectionError(box, token, e, what, again) {
   $('#secretry', box)?.addEventListener('click', again);
 }
 
-// ====================== split ======================
+// split
 
 const SPLIT_STATE = { done: ['ok', 'Done'], partial: ['warn', 'Partial'], not_yet: ['', 'Not yet'], no_plan: ['', 'No plan'] };
 
@@ -186,7 +186,7 @@ async function planSplit(box, token) {
   }
 }
 
-// ====================== goals ======================
+// goals
 
 function planGoals(box, token) {
   return mountGoals(box, token, { title: '' });
@@ -365,7 +365,7 @@ function openContribution(g, ctx) {
   });
 }
 
-// ====================== debt ======================
+// debt
 
 const monthsWords = (m) => { const y = Math.floor(m / 12); const r = m % 12; return [y ? plural(y, 'year') : '', r ? plural(r, 'month') : ''].filter(Boolean).join(' ') || 'now'; };
 const monthYear = (iso) => `${MONTHS[Number(iso.slice(5, 7)) - 1]} ${iso.slice(0, 4)}`;
@@ -511,7 +511,7 @@ async function planDebt(box, token) {
   load();
 }
 
-// ====================== bills ======================
+// bills
 
 async function planBills(box, token) {
   let bills = null;

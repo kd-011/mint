@@ -88,7 +88,7 @@ test('every counted row amount adds up to what net worth counts (nothing vanishe
   assert.equal(sum, 120000 + 500000 - 50000 - 40000000 + 9000000 + 2000000 - 300000 + 50000000 + 700000);
 });
 
-// ---------- the order the owner sets ----------
+// the order the owner sets
 
 test('rows follow their sort within a section; the section order never changes', () => {
   const a = [

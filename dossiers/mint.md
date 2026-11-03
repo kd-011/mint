@@ -3,7 +3,7 @@ slug: mint
 name: Mint
 repo: .
 status: active
-last_verified: 2026-11-02
+last_verified: 2026-11-03
 tags: [node, sqlite, self-hosted, finance]
 ---
 
@@ -23,9 +23,9 @@ Self-hosted personal finance for Australians. These claims are the README's main
 ## Deploy
 
 - Out of the box it listens on loopback only. <!-- src: .env.example:20-21 -->
-- Docker Compose publishes both the demo and the real service on the host's loopback. <!-- src: docker-compose.yml:19, docker-compose.yml:31 -->
+- Docker Compose publishes both the demo and the real service on the host's loopback. <!-- src: docker-compose.yml:22, docker-compose.yml:52 -->
 - CI runs the tests and the secret scan. <!-- src: .github/workflows/ci.yml:30, .github/workflows/ci.yml:32 -->
-- Security reports go through GitHub private vulnerability reporting, not a public issue. <!-- src: SECURITY.md:5-9 -->
+- Security reports go through GitHub private vulnerability reporting, not a public issue. <!-- src: SECURITY.md:3-7 -->
 
 ## Generated facts
 

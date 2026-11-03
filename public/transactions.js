@@ -8,7 +8,7 @@ const HEAD_H = 34;
 const FILTER_KEYS = ['q', 'account', 'category', 'from', 'to', 'business', 'tax', 'direction', 'source'];
 const txChanged = (t) => document.dispatchEvent(new CustomEvent('mint:txchanged', { detail: t }));
 
-// ---------- one transaction: optimistic patch ----------
+// one transaction: optimistic patch
 
 function applyPatchLocal(t, patch) {
   if ('category_id' in patch) {
@@ -82,7 +82,7 @@ async function chooseCategory(t) {
   return r.ok;
 }
 
-// ---------- tax tag form ----------
+// tax tag form
 
 let atoList = store.get('ato');
 async function loadAto() {
@@ -154,7 +154,7 @@ async function openTaxForm(t) {
   });
 }
 
-// ---------- merchant logo ----------
+// merchant logo
 
 // A website for this merchant's logo, or none. The server validates and looks the icon up; this is the quick check as you type.
 const siteOk = (v) => /^[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}$/i.test(v.trim().replace(/^https?:\/\//i, '').split(/[/?#]/)[0].replace(/^www\./i, ''));
@@ -213,7 +213,7 @@ function openLogoForm(t, info, onDone) {
   });
 }
 
-// ---------- receipts ----------
+// receipts
 
 // A phone photo is often 5 MB or more; shrink it before it goes up.
 async function prepareReceipt(file) {
@@ -250,7 +250,7 @@ function viewReceipt(r, t, redraw) {
   });
 }
 
-// ---------- the editor ----------
+// the editor
 
 function sourceLabel(t) { return t.category_source === 'manual' ? 'Set by you' : t.category_source === 'rule' ? 'By a rule' : t.category_source === 'ai' ? 'Model guess' : t.category_source === 'provider' ? 'Bank guess' : 'Not filed'; }
 
@@ -405,7 +405,7 @@ async function openTxById(id) {
   } catch (e) { toast(`Couldn't open the transaction: ${e.detail}`, { error: true }); }
 }
 
-// ---------- doubtful transfers: review queue (also embedded in Accounts) ----------
+// doubtful transfers: review queue (also embedded in Accounts)
 
 function transferCardHtml(x) {
   const o = x.out;
@@ -478,7 +478,7 @@ async function openTransferReview() {
   }
 }
 
-// ---------- the list ----------
+// the list
 
 const txMem = { key: null, items: [], next: null, fresh: false };
 // After a manual write (add, edit, import, delete): drop the saved lists so the screen reads fresh.
@@ -603,7 +603,7 @@ async function viewTransactions(el, token) {
     requestAnimationFrame(syncBar);
   };
 
-  // ----- summary strip: what the filtered list adds up to -----
+  // summary strip: what the filtered list adds up to
   const SUM_CAP = 1000; // rows fetched in the background to complete the totals
   // Until a fresh page has arrived the rows are a saved copy (the first 40, next unset), so the totals are partial.
   let capped = false;
@@ -615,7 +615,7 @@ async function viewTransactions(el, token) {
     box.innerHTML = `<div class="txsum" role="status"><b>${esc(p.count)}</b><span class="sums"><span class="in">In <span class="num">${esc(p.in)}</span></span><span class="out">Out <span class="num">${esc(p.out)}</span></span>${p.moved ? `<span class="moved">Moved out <span class="num">${esc(p.moved)}</span></span>` : ''}</span>${p.note ? `<small>${esc(p.note)}</small>` : ''}</div>`;
   };
 
-  // ----- windowed layout -----
+  // windowed layout
   let layout = [];
   let total = 0;
   let pool = new Map();
@@ -697,7 +697,7 @@ async function viewTransactions(el, token) {
   document.addEventListener('mint:txchanged', onTxChanged);
   cleanup.push(() => document.removeEventListener('mint:txchanged', onTxChanged));
 
-  // ----- data -----
+  // data
   const key = JSON.stringify(f);
   if (mem.key !== key) {
     const cached = store.get(`tx:${key}`);
@@ -823,7 +823,7 @@ async function viewTransactions(el, token) {
     windowRender();
   }
 
-  // ----- interaction -----
+  // interaction
   const setFilters = (next) => { f = next; writeFilters(f); render({ keepScroll: false }); };
   mountViews(el, token, () => f, setFilters);
   let deb;
@@ -944,7 +944,7 @@ async function viewTransactions(el, token) {
   addEventListener('scroll', swipeScroll, { passive: true });
   cleanup.push(() => removeEventListener('scroll', swipeScroll));
 
-  // ----- keyboard (desktop): j and k move a highlight down the list, e edits it -----
+  // keyboard (desktop): j and k move a highlight down the list, e edits it
   const kbMark = () => {
     $$('.vrow.kb', list).forEach((n) => { if (n.dataset.id !== kbId) n.classList.remove('kb'); });
     if (kbId) $(`.vrow[data-id="${CSS.escape(kbId)}"]`, list)?.classList.add('kb');
@@ -976,7 +976,7 @@ async function viewTransactions(el, token) {
   };
   cleanup.push(() => { listKeys = null; });
 
-  // ----- bulk edit -----
+  // bulk edit
   let bulkBar = null;
   function startSelecting(id) {
     selecting = true;

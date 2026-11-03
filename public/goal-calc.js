@@ -83,7 +83,7 @@ const GoalCalc = (() => {
   // cleared or met target.
   const dateFromAmount = (r) => (r.status === 'ok' ? r.date : r.status === 'beyond' ? '' : null);
 
-  // ----- the date slider: whole days from tomorrow to 10 years out -----
+  // the date slider: whole days from tomorrow to 10 years out
   const dateSlider = (today) => ({ min: 1, max: daysBetween(today, maxDate(today)) });
   const dateAtDay = (today, day) => addDays(today, day);
   const dayOfDate = (today, date, bounds = dateSlider(today)) => Math.max(bounds.min, Math.min(bounds.max, daysBetween(today, date)));
@@ -100,7 +100,7 @@ const GoalCalc = (() => {
     return `in ${UX.monthsWords(m)}`;
   }
 
-  // ----- the amount slider: a ladder of tidy amounts, so every arrow key press moves one rung -----
+  // the amount slider: a ladder of tidy amounts, so every arrow key press moves one rung
   // Steps are 1, 2 or 5 times a power of ten, about 2% of the amount, never under $1.
   function niceStep(cents) {
     const raw = Math.max(100, cents / 50);
@@ -127,7 +127,7 @@ const GoalCalc = (() => {
     return best;
   }
 
-  // ----- the result line, as [{ t, b }] segments (b = emphasised) -----
+  // the result line, as [{ t, b }] segments (b = emphasised)
   function resultWords(r, fmt) {
     const per = FREQS[r.freq]?.per ?? '';
     if (r.status === 'met') return [{ t: 'Target already met, ' }, { t: fmt(r.saved), b: true }, { t: ' saved.' }];

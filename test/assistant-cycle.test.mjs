@@ -1,4 +1,4 @@
-// v2 step 9: the assistant door reads the pay cycle: current cycle summary,
+// The assistant door reads the pay cycle: current cycle summary,
 // income, bills, goals and debt, and the summary carries the cycle headline.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';

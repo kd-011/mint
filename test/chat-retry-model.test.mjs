@@ -17,7 +17,7 @@ const user = (id, text, rid) => ({ id, role: 'user', text, ...(rid ? { rid } : {
 const reply = (id, o = {}) => ({ id, role: 'assistant', text: '', tool: null, cards: [], status: 'done', error: null, ...o });
 const broken = (id, cards) => reply(id, { text: 'Logged it, ', cards, status: 'error', error: { code: 'stream-broken', message: 'cut' } });
 
-// ---------- fix 1 ----------
+// fix 1
 
 test('request ids fit the shape Mint accepts', () => {
   const a = M.newRequestId();
@@ -71,7 +71,7 @@ test('cardTokens collects every change token on screen', () => {
   assert.deepEqual([...M.cardTokens(msgs)].sort(), ['u_a', 'u_b']);
 });
 
-// ---------- fix 2 ----------
+// fix 2
 
 const saved = (msgs, queue) => ({ id: 'm_1', msgs, queue });
 

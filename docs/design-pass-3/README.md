@@ -2,7 +2,7 @@
 
 > The before and after screenshots this note describes are not in the public repository (about 17 MB each). Regenerate them: `node scripts/ui-fixture.mjs 8991 --browse`, then `node scripts/ui-shots.mjs <dir> --base http://127.0.0.1:8991` (see the header of `scripts/ui-shots.mjs` for the browser it needs).
 
-2026-10-21. A visible redesign, asked for after pass 2 turned out to be mostly motion. The theme (dark, green, pill), the structure and every route, number and feature stay. Only the surface language changes. It changes everywhere at once because the work is in the tokens and shared classes, not per screen.
+A visible redesign, because pass 2 turned out to be mostly motion. The theme (dark, green, pill), the structure and every route, number and feature stay. Only the surface language changes. It changes everywhere at once because the work is in the tokens and shared classes, not per screen.
 
 `before/` and `after/` hold the same 25 screens at 390x844 (`m-`, 2x) and 1440x900 (`d-`): shot with `node scripts/ui-shots.mjs <dir>` against the fixture servers. Before is `main` at pass 2. The shots show no horizontal scroll and no clipped text at either size. The only small targets listed were already there (swipe actions hidden behind their row, 36px desktop filter buttons under a fine pointer).
 

@@ -11,7 +11,7 @@
 // built from --today itself: the salary landed yesterday, fortnightly before that.
 // scripts/demo-seed.mjs is the same thing with the demo defaults.
 import { spawn } from 'node:child_process';
-import { createServer, request as httpRequest } from 'node:http';
+import { createServer } from 'node:http';
 import { randomBytes } from 'node:crypto';
 import { mkdtempSync, mkdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -26,6 +26,7 @@ const BROWSE = ARGV.includes('--browse');
 // Mint refuses any request without the gateway's shared secret, so the fixture makes one per run.
 const GATE = randomBytes(24).toString('hex');
 const { zoneDate } = await import(join(ROOT, 'lib/dates.mjs'));
+const { createFront } = await import(join(ROOT, 'lib/localfront.mjs'));
 const { fakeRedbark, FAKE_KEY } = await import(join(ROOT, 'test/fixtures/fake-redbark.mjs'));
 const fx = await import(join(ROOT, 'test/fixtures/data.mjs'));
 
@@ -134,18 +135,16 @@ if (keepHome) mkdirSync(home, { recursive: true });
 // With --browse the server hides on a free port and a proxy on PORT adds the gateway's Remote-User header.
 const freePort = () => new Promise((res) => { const s = createServer().listen(0, '127.0.0.1', () => { const { port } = s.address(); s.close(() => res(String(port))); }); });
 const INNER = BROWSE ? await freePort() : PORT;
-const p = spawn(process.execPath, [join(ROOT, 'server.mjs')], { env: { PATH: process.env.PATH, MINT_HOME: home, MINT_PORT: INNER, MINT_SCHEDULER: 'off', MINT_LOCK: 'off', MINT_USER: 'owner', MINT_GATE_KEY: GATE, ...(process.env.MINT_TZ ? { MINT_TZ: process.env.MINT_TZ } : {}), ...(BROWSE ? { MINT_ORIGIN: `http://127.0.0.1:${PORT}` } : {}), ...(NO_RB ? {} : { REDBARK_API_KEY: FAKE_KEY, REDBARK_API_BASE: l.base }) }, stdio: ['ignore', 'inherit', 'inherit'] });
+const p = spawn(process.execPath, [join(ROOT, 'server.mjs')], { env: { PATH: process.env.PATH, MINT_HOME: home, MINT_PORT: INNER, MINT_SCHEDULER: 'off', MINT_LOCK: 'off', MINT_USER: 'owner', MINT_GATE_KEY: GATE, ...(process.env.MINT_TZ ? { MINT_TZ: process.env.MINT_TZ } : {}), ...(BROWSE ? { MINT_ORIGIN: `http://127.0.0.1:${PORT}`, NODE_NO_WARNINGS: '1' } : {}), ...(NO_RB ? {} : { REDBARK_API_KEY: FAKE_KEY, REDBARK_API_BASE: l.base }) }, stdio: ['ignore', BROWSE ? 'ignore' : 'inherit', 'inherit'] });
 let front = null;
+let seeded = false;
 if (BROWSE) {
-  front = createServer((req, res) => {
-    const up = httpRequest({ host: '127.0.0.1', port: INNER, path: req.url, method: req.method, headers: { ...req.headers, 'remote-user': 'owner', 'x-mint-gate': GATE } }, (r) => { res.writeHead(r.statusCode, r.headers); r.pipe(res); });
-    up.on('error', () => { res.writeHead(502); res.end('Mint is not up yet'); });
-    req.pipe(up);
-  }).listen(Number(PORT), process.env.MINT_DEMO_HOST || '127.0.0.1');
+  front = createFront({ innerPort: INNER, gate: GATE, upstreamOrigin: `http://127.0.0.1:${PORT}`, ready: () => seeded, loading: 'Loading the demo data. This takes about ten seconds.' })
+    .listen(Number(PORT), process.env.MINT_DEMO_HOST || '127.0.0.1');
 }
 process.on('SIGTERM', () => { p.kill(); front?.close(); fake && l.server.close(); if (!keepHome) rmSync(home, { recursive: true, force: true }); process.exit(0); });
 process.on('SIGINT', () => process.emit('SIGTERM'));
-console.log('fixture home', home);
+console.log(BROWSE ? 'Loading the demo data, about ten seconds...' : `fixture home ${home}`);
 
 // ---- seed through the API once the server is up
 const B = `http://127.0.0.1:${INNER}`;
@@ -186,4 +185,5 @@ if (!E0) {
   await tag('SALVATION ARMY', 'D9');
   await tag('ACME TAX SERVICES', 'D10');
 }
+seeded = true;
 console.log(BROWSE ? `ready: open http://127.0.0.1:${PORT}/ (Ctrl-C stops it)` : `ready on ${B} (send Remote-User: owner and X-Mint-Gate: ${GATE}, or use --browse)`);

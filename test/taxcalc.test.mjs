@@ -134,7 +134,7 @@ test('reverse withholding of a pay under the tax-free threshold is the pay itsel
   assert.equal(grossFromNet(2027, $(300), 'weekly'), $(300));
 });
 
-// ---------- the whole return ----------
+// the whole return
 
 const base = { interest: 0, business: 0, other: 0, deductions: 0, d12: 0, private_health: true, has_help: false };
 

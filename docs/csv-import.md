@@ -4,7 +4,7 @@ Mint does not need a bank feed. Add an account by hand, export a CSV statement f
 
 ## Five minutes
 
-1. Start Mint ([self-hosting.md](self-hosting.md), or `docker compose --profile real up -d mint`). The first screen on a fresh book offers two choices. Tap "Add an account and import a CSV".
+1. Start Mint: `MINT_TZ=Australia/Sydney docker compose --profile local up -d local` and open <http://127.0.0.1:8981/> (use your own zone, see [Timezone](self-hosting.md#timezone)). For a phone as well, follow [self-hosting.md](self-hosting.md) instead. The first screen on a fresh book offers two choices. Tap "Add an account and import a CSV".
 2. Name the account, say which bank it is at, and give its balance as at the day before your statement starts (the opening balance). Tap "Add account".
 3. Mint opens the import straight away. Choose the CSV file you exported.
 4. Check the preview. It lists the first rows with the amount Mint read, how many rows are new, already in Mint or unreadable (with the row number and the reason), and the columns it picked. Fix anything that is wrong, then tap "Import".
@@ -45,6 +45,12 @@ If your file has a different shape, the column step (below) handles it. If your 
 - Balance and reference columns, when there are any. If the statement has a closing balance that differs from Mint's, a switch offers to record the difference as a balance adjustment, in the same undoable import.
 - Text encodings: UTF-8, falling back to Windows-1252. A formula-looking cell (`=...`) is kept as plain text.
 - Foreign currencies: the account's currency, with the exchange rate for each day fetched from the ECB (Frankfurter). If a rate cannot be fetched, the whole import is refused.
+
+## How Mint finds your pay
+
+A bank feed labels pay for Mint. A statement does not, so Mint looks for what pay looks like: the same payer, a steady amount (within a quarter either way), a weekly, fortnightly or monthly rhythm, and a deposit in the last 45 days. Two deposits are enough when the description says salary, wages, payroll or pay. With none of those words it wants four, it takes the biggest, and it skips anything that looks like a person's name, a transfer, interest or rent.
+
+Once it has found your pay, the pay cycles, cycle budgets and safe to spend all appear, and starter budgets are made from your spending. You can see and change what it chose on the Income screen. If it finds nothing, tap Add a stream there and describe the deposit. Import the account your pay lands in first, and import at least two pays.
 
 ## Importing the same rows twice is safe
 

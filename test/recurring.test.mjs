@@ -126,7 +126,7 @@ test('unusual: not flagged when the merchant has charged as much before', () => 
   assert.deepEqual(detectUnusual(b.db, TODAY), []);
 });
 
-// ---------- detection that tolerates the owner's Subscriptions category ----------
+// detection that tolerates the owner's Subscriptions category
 // A merchant whose rows the owner (or a rule) filed under Subscriptions is a
 // candidate with a looser test: price points that alternate, amounts that
 // drift up to about 35%, two charges are enough. Everything else keeps the

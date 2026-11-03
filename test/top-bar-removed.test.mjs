@@ -75,7 +75,7 @@ test('the / and Ctrl or Cmd K shortcuts still open the palette', () => {
   assert.doesNotMatch(code('search.js'), /searchbtn/);
 });
 
-// ---------- the net worth card ----------
+// the net worth card
 
 const home = read('home.js');
 const AUD = new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' });

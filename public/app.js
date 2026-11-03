@@ -217,7 +217,7 @@ const soft = () => {
 document.addEventListener('mint:data', soft);
 window.addEventListener('mint:synced', soft);
 
-// ---------- boot ----------
+// boot
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(() => {});

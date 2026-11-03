@@ -151,7 +151,7 @@ test('forecast: the range is labelled an estimate and the assumptions are stated
   assert.ok(f.days.every((d) => d.low <= d.balance && d.balance <= d.high));
 });
 
-// ---- cards, loans and the cash view ----
+// cards, loans and the cash view
 // Daily $100 on the Test Platinum Card for the same 56 days, and the card's $500 balance owed.
 function withCardSpend(b) {
   for (let d = addDays(TODAY, -56); d < TODAY; d = addDays(d, 1)) b.add('acct_t_card', d, -10000, `TEST CARD SHOP ${d}`);
@@ -220,7 +220,7 @@ test('forecast: a home loan on the pay split is taken off once, from its instalm
   assert.deepEqual(loan.map((i) => [i.date, i.amount, i.kind]), [['2026-10-29', -230000, 'bill']]);
 });
 
-// ---- API ----
+// API
 let srv, base, b;
 before(async () => {
   b = forecastBook();

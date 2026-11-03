@@ -75,7 +75,7 @@ test('without replace the old rule holds: a category with a budget is skipped', 
   assert.equal(r.created.length, 0);
 });
 
-// ---- over HTTP: regenerate and the undo restore both go through the API ----
+// over HTTP: regenerate and the undo restore both go through the API
 
 let proc, base, home;
 before(async () => {
@@ -122,7 +122,7 @@ test('POST /api/budgets/starter {replace} then PUT {source} puts a budget back e
   assert.equal((await call('PUT', `/api/budgets/${groc}`, { cycle_target: 1, source: 'nonsense' })).status, 400);
 });
 
-// ---- cycle budgets list the spending that has no budget yet ----
+// cycle budgets list the spending that has no budget yet
 
 test('cycle budgets carry unbudgeted spending, biggest first, for the "no budget yet" list', async () => {
   const { cycleBudgetProgress } = await import('../lib/budgets.mjs');

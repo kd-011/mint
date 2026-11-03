@@ -39,7 +39,7 @@ async function viewSave(el, token) {
   ]);
 }
 
-// ====================== savings and goals ======================
+// savings and goals
 
 function acctRow(a) {
   const offset = a.role === 'offset';
@@ -117,7 +117,7 @@ async function saveSavings(box, token, charts) {
   await Promise.all([loadSv(), goalsLoaded]);
 }
 
-// ====================== super ======================
+// super
 
 // Mirrors lib/superfund.mjs, for a value saved while offline.
 function superChange(history) {
@@ -259,7 +259,7 @@ function openSuperAdd(done) {
   });
 }
 
-// ====================== home loan ======================
+// home loan
 
 const MISSING_WORDS = { rate: 'the interest rate', repayment: 'the repayment', end_date: 'the loan end date' };
 

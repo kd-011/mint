@@ -131,7 +131,7 @@ async function saveShares(box, token, charts) {
   await load();
 }
 
-// ====================== add a holding ======================
+// add a holding
 
 function openHoldingAdd(done) {
   const panel = openModal(`${sheetHead(null, 'Add a holding')}
@@ -171,7 +171,7 @@ function openHoldingAdd(done) {
   });
 }
 
-// ====================== one holding ======================
+// one holding
 
 function openHolding(id, ctx) {
   const h0 = ctx.find(id);

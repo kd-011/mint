@@ -28,10 +28,13 @@ test('every relative link and image in the README and docs exists', () => {
   }
 });
 
-test('the README opens with the banner, the badges and the hero, and the media is a sane size', () => {
+test('the README opens with a plain sentence, a real picture and a command, and the media is a sane size', () => {
   const r = read('README.md');
-  assert.ok(r.indexOf('docs/banner.png') < r.indexOf('img.shields.io'), 'banner first, then badges');
-  for (const f of ['docs/banner.png', 'docs/hero.png', 'docs/demo.gif']) assert.ok(r.includes(f), `${f} is in the README`);
+  assert.ok(r.indexOf('docs/hero.png') < r.indexOf('docker compose up'), 'the picture is above the first command');
+  assert.ok(r.indexOf('docs/hero.png') < 500, 'the picture is above the fold');
+  assert.ok(!r.includes('img.shields.io'), 'no badge wall');
+  assert.ok(r.split(/\s+/).length < 700, 'the README reads in about two minutes');
+  assert.ok(read('docs/features.md').includes('demo.gif'), 'the tour lives in the features page');
   assert.ok(statSync(join(ROOT, 'docs/demo.gif')).size < 3 * 1024 * 1024, 'the GIF stays under 3 MB');
   const social = readFileSync(join(ROOT, 'docs/social-preview.png'));
   assert.equal(social.readUInt32BE(16), 1280);

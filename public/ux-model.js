@@ -4,7 +4,7 @@
 'use strict';
 
 const UxModel = (() => {
-  // ---------- the palette: screens and jump-to actions ----------
+  // the palette: screens and jump-to actions
 
   // href is a real route (a test resolves every one); words are extra things to type.
   const SCREENS = [
@@ -69,7 +69,7 @@ const UxModel = (() => {
     return { actions: rank(actions, q, 6), screens: rank(SCREENS, q, empty ? screens : 6) };
   }
 
-  // ---------- recent searches ----------
+  // recent searches
 
   function pushRecent(list, q, max = 6) {
     const t = String(q ?? '').trim().replace(/\s+/g, ' ');
@@ -77,7 +77,7 @@ const UxModel = (() => {
     return [t, ...list.filter((x) => x.toLowerCase() !== t.toLowerCase())].slice(0, max);
   }
 
-  // ---------- saved views ----------
+  // saved views
 
   const FILTER_KEYS = ['q', 'account', 'category', 'from', 'to', 'business', 'tax', 'direction', 'source'];
   const clean = (f) => Object.fromEntries(FILTER_KEYS.filter((k) => f?.[k]).map((k) => [k, String(f[k])]));
@@ -89,7 +89,7 @@ const UxModel = (() => {
     return kx.length === Object.keys(y).length && kx.every((k) => x[k] === y[k]);
   }
 
-  // ---------- Transactions filter dropdowns ----------
+  // Transactions filter dropdowns
 
   // Categories for the Category dropdown: named sections in the order the list gives them, never one long list.
   // A search term keeps the categories whose name matches, or all of a section whose name matches. `open` says
@@ -117,7 +117,7 @@ const UxModel = (() => {
     return ACCOUNT_KINDS.filter(([k]) => by[k].length).map(([k, title]) => ({ name: title, items: by[k] }));
   }
 
-  // ---------- keyboard ----------
+  // keyboard
 
   const GO = { h: 'home', s: 'spending', v: 'save', t: 'tax', m: 'more' };
   const CHORD_MS = 1500;
@@ -155,7 +155,7 @@ const UxModel = (() => {
     ['Anywhere', [['?', 'This list'], ['Esc', 'Close a sheet or search']]],
   ];
 
-  // ---------- the Home sync strip ----------
+  // the Home sync strip
 
   const SYNC_PHASES = ['Connecting to your banks', 'Reading balances', 'Pulling transactions', 'Categorising'];
 
@@ -183,7 +183,7 @@ const UxModel = (() => {
     return { shown, ready: shown >= PULL_MARK, pct: Math.min(100, Math.round((shown / PULL_MARK) * 100)) };
   };
 
-  // ---------- the cycle insights card ----------
+  // the cycle insights card
 
   const changeWord = (m) => (m.before === 0 ? 'new this cycle' : m.percent == null ? '' : `${m.percent > 0 ? '+' : ''}${m.percent}%`);
   // "Up $250" / "Down $85", with the percent where there is one.
@@ -202,7 +202,7 @@ const UxModel = (() => {
     return `/transactions?${p}`;
   }
 
-  // ---------- Home quick actions, short labels, deep links ----------
+  // Home quick actions, short labels, deep links
 
   // 1,049 -> "1k", 4,502 -> "4.5k": a count that has to fit a badge.
   function compactCount(n) {
@@ -261,7 +261,7 @@ const UxModel = (() => {
   // The saved views row sits under the filters. Empty, it only costs a line of the fold.
   const showViewsRow = ({ views = 0, loaded = true, canSave = false, error = false } = {}) => !error && (!loaded || views > 0 || canSave);
 
-  // ---------- one-tap recategorising ----------
+  // one-tap recategorising
 
   // The categories just used, newest first, so the next pick is a tap on a chip.
   function pushRecentCat(list, id, max = 8) {
@@ -281,7 +281,7 @@ const UxModel = (() => {
     return out.slice(0, max);
   }
 
-  // ---------- plain-English Home cards ----------
+  // plain-English Home cards
 
   const plainPlural = (n, one) => `${n} ${n === 1 ? one : `${one}s`}`;
   const evenMark = (c) => (c.open ? Math.max(0, Math.min(100, Math.round((c.day / c.days) * 100))) : 100);
@@ -399,7 +399,7 @@ const UxModel = (() => {
     return { sections, count: sections.reduce((n, s) => n + s.rows.length, 0) };
   }
 
-  // ---------- the account page (/account?id=) ----------
+  // the account page (/account?id=)
 
   // Where an account row goes: its page, which opens that account's transactions, rules and config.
   const accountHref = (id) => `/account?id=${encodeURIComponent(id)}`;
@@ -500,7 +500,7 @@ const UxModel = (() => {
   // Every row id in the order shown, sections top to bottom: the body of PUT /api/home/order.
   const orderIds = (list) => list.sections.flatMap((s) => s.rows.filter((r) => r.kind !== 'holding' && r.kind !== 'holding-more').map((r) => r.id)); // the share rows under the portfolio are not orderable
 
-  // ---------- the Transactions list: row, subline, summary strip ----------
+  // the Transactions list: row, subline, summary strip
 
   // A settled transfer leg, or a row filed as a transfer.
   const isTransferLeg = (t) => (!!t.transfer && t.transfer.status !== 'review') || t.category_kind === 'transfer';
@@ -563,7 +563,7 @@ const UxModel = (() => {
     return { count: n, in: fmt(s.inCents), out: fmt(s.outCents), moved: s.movedOutCents ? fmt(s.movedOutCents) : '', note: [xf, tail].filter(Boolean).join(', ') };
   }
 
-  // ---------- Save and Invest goals ----------
+  // Save and Invest goals
 
   // The words and numbers behind each goal card and the summary above them. The
   // input is the `items` of GET /api/goals (cents, ISO dates); `fmt` turns cents
@@ -776,7 +776,7 @@ const UxModel = (() => {
     return { line: v.hasTarget ? `${fmt(v.saved)} of ${fmt(v.target)}` : `${fmt(v.saved)} saved`, word: ROW_WORD[v.status] ?? '' };
   }
 
-  // ---------- number ticker ----------
+  // number ticker
 
   // A hero figure counts up from zero the first time it is drawn in a session, and after that only ticks
   // from the figure last shown to the new one (a sync landing, a budget edited). The same figure drawn
@@ -793,7 +793,7 @@ const UxModel = (() => {
     return prev === next ? null : { from: prev, to: next, ms: TICK_MS };
   }
 
-  // ---------- downloads ----------
+  // downloads
 
   function filenameFrom(disposition, fallback = 'mint-transactions.csv') {
     const m = /filename="?([^";]+)"?/i.exec(disposition ?? '');

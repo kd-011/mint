@@ -5,7 +5,7 @@
 'use strict';
 
 const ChatModel = (() => {
-  // ---------- the stream ----------
+  // the stream
 
   // Incremental: hand back what was left over last time plus the new text, get
   // whole events and the new leftover. Comments (": ping") and blocks that are
@@ -29,7 +29,7 @@ const ChatModel = (() => {
     return { events, rest: left };
   }
 
-  // ---------- a reply ----------
+  // a reply
 
   let seq = 0;
   const newReply = () => ({ id: `r${Date.now().toString(36)}${(seq += 1)}`, role: 'assistant', text: '', tool: null, cards: [], status: 'streaming', error: null });
@@ -64,7 +64,7 @@ const ChatModel = (() => {
     return m;
   }
 
-  // ---------- retry, restore and the queue ----------
+  // retry, restore and the queue
 
   // One id per question, sent with every attempt at it, so Mint can tell a resend
   // from a new question. Same alphabet as the conversation id.
@@ -125,7 +125,7 @@ const ChatModel = (() => {
     return queue[0];
   }
 
-  // ---------- errors ----------
+  // errors
 
   const HEADS = {
     busy: ['The assistant is still answering your last message', true],
@@ -156,7 +156,7 @@ const ChatModel = (() => {
     return { head: 'Chat hit a problem', detail, retry: true };
   }
 
-  // ---------- reply text ----------
+  // reply text
 
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const inline = (s) => esc(s).replace(/`([^`\n]+)`/g, '<code>$1</code>').replace(/\*\*([^*\n]+?)\*\*/g, '<strong>$1</strong>');
@@ -178,7 +178,7 @@ const ChatModel = (() => {
     return out.join('');
   }
 
-  // ---------- prompts, ids, history ----------
+  // prompts, ids, history
 
   const PROMPTS = {
     home: ['How am I tracking this pay cycle?', 'What is my safe to spend?', 'Anything I should look at this week?'],

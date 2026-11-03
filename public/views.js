@@ -97,7 +97,7 @@ function mountViews(el, token, getF, apply) {
   load();
 }
 
-// ---------- save, rename, delete ----------
+// save, rename, delete
 
 function openSaveViewSheet(getF, repaint) {
   const f = viewFilters(getF());
@@ -195,7 +195,7 @@ function openViewSheet(v, getF, apply, repaint) {
   });
 }
 
-// ---------- CSV export ----------
+// CSV export
 
 async function fetchCsv(path) {
   if (demoActive()) throw demoNoDownload();

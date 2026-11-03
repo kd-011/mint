@@ -33,7 +33,7 @@ const lockUi = (() => {
     set: (v) => store.set('lock', { ...saved.get(), ...v }),
   };
 
-  // ---------- the cover ----------
+  // the cover
 
   const COPY = {
     checking: { t: 'Mint', line: 'Checking the lock...' },
@@ -104,7 +104,7 @@ const lockUi = (() => {
     check({ prompt });
   }
 
-  // ---------- talking to the server (silent retries before any error shows) ----------
+  // talking to the server (silent retries before any error shows)
 
   async function call(path, body) {
     let lastErr;
@@ -247,7 +247,7 @@ const lockUi = (() => {
     } finally { clearTimeout(slow); busy = false; }
   }
 
-  // ---------- every /api/ call goes past the lock ----------
+  // every /api/ call goes past the lock
 
   // The lock's own endpoints, which the server answers while locked (Settings' list is not one).
   const LOCK_FREE = /^\/api\/lock\/(status|challenge|verify|register-challenge|register-verify|lock)$/;
@@ -264,7 +264,7 @@ const lockUi = (() => {
     }
   };
 
-  // ---------- idle, background, keepalive ----------
+  // idle, background, keepalive
 
   const touch = () => { lastTouch = Date.now(); touchedSincePing = true; };
   for (const ev of ['pointerdown', 'keydown', 'wheel', 'touchstart']) addEventListener(ev, touch, { passive: true, capture: true });

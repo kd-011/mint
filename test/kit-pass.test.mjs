@@ -112,7 +112,7 @@ test('the budgets flexible card has one figure (what is left) and no total repea
   assert.doesNotMatch(sec, /money0/, 'the section heading carries no total');
 });
 
-// ---- review round 2: Undo must be real, and Budgets says each figure once ----
+// review round 2: Undo must be real, and Budgets says each figure once
 import vm from 'node:vm';
 
 function bootUndo() {

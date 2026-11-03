@@ -63,7 +63,7 @@ function state() {
 
 const shop = (n, desc = 'TEST HARDWARE BARN', amount = -2500) => Array.from({ length: n }, (_, i) => b.add('acct_t_everyday', `2026-09-${String(i + 1).padStart(2, '0')}`, amount - i, desc));
 
-// ---------- safe writes ----------
+// safe writes
 
 test('recategorise one transaction: applies now, undo puts every column back, token is single use', async () => {
   const [id] = shop(1);
@@ -203,7 +203,7 @@ test('a write that changes nothing has nothing to undo', async () => {
   assert.ok(r.undo.token, 'the new rule itself can be undone');
 });
 
-// ---------- confirm-required writes ----------
+// confirm-required writes
 
 test('bulk edit: up to 5 transactions applies with undo, 6 needs a confirm and changes nothing until then', async () => {
   const five = shop(5);
@@ -306,7 +306,7 @@ test('an account type override is preview then confirm, undoable, and refuses a 
   assert.deepEqual({ ...typeOf() }, was);
 });
 
-// ---------- tokens ----------
+// tokens
 
 test('undo tokens last 24 hours, confirm tokens 10 minutes', async () => {
   const [id] = shop(1);
@@ -386,7 +386,7 @@ test('nothing deletes a transaction, touches a connection or moves money', async
   assert.ok(b.row(id));
 });
 
-// ---------- reads ----------
+// reads
 
 test('reads for chat: save and invest, holdings, loan, forecast, goals, pack link, tax estimate, rules, assets', async () => {
   createHolding(b.db, { ticker: 'VAS', exchange: 'ASX', units: 10, avg_cost: 90, manual_price: 100 });

@@ -1,6 +1,6 @@
 // Publish a scrubbed copy of Mint to the public checkout, outside this repo.
 //
-//   node scripts/export-public.mjs [--out DIR] [--ref REF] [--push] [--from SHA] [--branch main]
+//   node scripts/export-public.mjs --message "Subject" [--out DIR] [--ref REF] [--push] [--branch main]
 //                                  [--deny a,b] [--exclude path,path] [--author "Name <email>"]
 //   node scripts/export-public.mjs --fresh [--out DIR] [--force] ...      the old one-commit export
 //
@@ -15,9 +15,10 @@
 //      against the previous public commit, makes ONE new commit on top (history is never
 //      rewritten), then scans the whole tree and every unpushed commit, message included.
 // Any scan finding aborts: the checkout is put back exactly as it was and nothing is committed.
-// The commit message lists the private commit subjects since the last export (subjects the scan
-// flags are left out). The private sha of the last export is kept in DIR/.git/mint-export-state.json,
-// inside .git, so it is never in the public tree and never pushed. --from SHA overrides it.
+// The commit message is --message, written for a public reader: private subjects stay private. It is
+// required when there is something to commit, and the final scan covers it. The private sha of the
+// last export is kept in DIR/.git/mint-export-state.json, inside .git, so it is never in the public
+// tree and never pushed.
 // Without --push the commit is left ready; with --push it is pushed to origin (also when an
 // earlier run left a commit unpushed).
 //
@@ -45,7 +46,7 @@ import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, 
 import { homedir, tmpdir } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { FORBIDDEN_PATHS, denylistEntries, denylistFile, loadDenylist, scanHistory, scanStagedDiff, scanText, scanTree, summarise } from './secret-scan.mjs';
+import { FORBIDDEN_PATHS, denylistEntries, denylistFile, loadDenylist, scanHistory, scanStagedDiff, scanTree, summarise } from './secret-scan.mjs';
 
 export const DEFAULT_IDENTITY = { name: 'kd-011', email: '229900447+kd-011@users.noreply.github.com' };
 
@@ -234,7 +235,7 @@ export function buildExport({ source, out, ref = 'HEAD', force = false, deny = [
     const run = (...a) => execFileSync('git', ['-C', out, ...a], { env, encoding: 'utf8' });
     run('init', '-q', '-b', 'main');
     run('add', '-A');
-    run('commit', '-q', '-m', 'Mint: first public commit', '-m', 'A clean single-commit export of the project tree. No earlier history.');
+    run('commit', '-q', '-m', 'First public version', '-m', 'History starts here. Earlier work was done in a private repository.');
     if (run('remote').trim()) throw new Error('the export has a remote; it must have none');
     if (Number(run('rev-list', '--count', 'HEAD').trim()) !== 1) throw new Error('the export must be exactly one commit');
 
@@ -251,46 +252,12 @@ export function buildExport({ source, out, ref = 'HEAD', force = false, deny = [
   }
 }
 
-// A branch landed by the task runner is one commit titled `Merge feature/<task words>-<id>`. The
-// branch name and task id mean nothing in public, so show the words: "Merge feature/mint-widget-screen-mvabc123"
-// becomes "Widget screen". Task slugs are cut at about 32 characters, so a long one gets an ellipsis.
-export function plainSubject(subject) {
-  const m = /^Merge feature\/(.+?)-[a-z]{2}[a-z0-9]{5,}$/.exec(subject);
-  if (!m) return subject;
-  const words = m[1].replace(/^mint-/, '').replace(/-+/g, ' ').trim();
-  if (!words) return '';
-  return `${words[0].toUpperCase()}${words.slice(1)}${m[1].length >= 30 ? '...' : ''}`;
-}
-
-// Private commit subjects since the last export, minus anything the scan flags. Merge commits
-// (branch names) are skipped. Without a usable marker, falls back to commits newer than `sinceDate`.
-function changeSubjects({ source, ref, from, sinceDate, deny, log }) {
-  let range = [`--since=${sinceDate}`, ref];
-  if (from) {
-    const ok = (() => { try { git(source, ['merge-base', '--is-ancestor', from, ref]); return true; } catch { return false; } })();
-    if (ok) range = [`${from}..${ref}`];
-    else log(`the last exported commit ${from.slice(0, 7)} is not an ancestor of ${ref}; listing commits since ${sinceDate} instead`);
-  }
-  const all = [...new Set(git(source, ['log', '--no-merges', '--format=%s', ...range]).split('\n').map((l) => plainSubject(l.trim())).filter(Boolean))];
-  const safe = all.filter((l) => !scanText(l, { deny }).length);
-  return { subjects: safe.slice(0, 40), more: Math.max(0, safe.length - 40), withheld: all.length - safe.length };
-}
-
-function commitMessage({ subjects, more, withheld }) {
-  const n = subjects.length + more;
-  const head = `Mint update ${new Date().toISOString().slice(0, 10)}${n ? `: ${n} change${n === 1 ? '' : 's'}` : ''}`;
-  const lines = subjects.map((l) => `- ${l}`);
-  if (more) lines.push(`- and ${more} more`);
-  if (withheld) lines.push(`(${withheld} subject${withheld === 1 ? '' : 's'} left out)`);
-  return lines.length ? `${head}\n\n${lines.join('\n')}\n` : `${head}\n`;
-}
-
 /**
  * Update a persistent public checkout with one new commit on top (see the header). Returns
- * { out, committed, commit, files, subjects, pushed }. Throws an Error (with `findings` when a scan
+ * { out, committed, commit, files, pushed }. Throws an Error (with `findings` when a scan
  * refused) and leaves the checkout exactly as it found it.
  */
-export function updatePublic({ source, out, ref = 'HEAD', branch = 'main', from = null, push = false, deny = [], exclude = [], author = null, log = () => {} }) {
+export function updatePublic({ source, out, ref = 'HEAD', branch = 'main', message = null, push = false, deny = [], exclude = [], author = null, log = () => {} }) {
   requireDenylist();
   source = resolve(source);
   out = resolve(out);
@@ -315,14 +282,13 @@ export function updatePublic({ source, out, ref = 'HEAD', branch = 'main', from 
   if (behind) throw new Error(`the public checkout is behind ${remoteRef} by ${behind} commit(s); pull them first`);
 
   const prev = g('rev-parse', 'HEAD');
-  const prevDate = g('log', '-1', '--format=%cI', 'HEAD');
   const id = exportIdentity(author);
   const env = commitEnv(id);
   const run = (...a) => execFileSync('git', ['-C', out, ...a], { env, encoding: 'utf8', maxBuffer: 1 << 30 });
   const restore = () => { g('reset', '-q', '--hard', prev); g('clean', '-fdq'); };
 
   const { stage, omitted, files, denyList } = stageTree({ source, ref, deny, exclude, log });
-  let committed = false, subjects = { subjects: [], more: 0, withheld: 0 };
+  let committed = false;
   try {
     // replace the working tree: drop what git tracks, copy the scrubbed tree over, stage it all
     for (const rel of g('ls-files', '-z').split('\0').filter(Boolean)) {
@@ -343,9 +309,8 @@ export function updatePublic({ source, out, ref = 'HEAD', branch = 'main', from 
       if (diffFindings.length) {
         throw refuse(`diff scan refused the update: ${summarise(diffFindings).length} finding(s)`, diffFindings);
       }
-      const state = readState(out);
-      subjects = changeSubjects({ source, ref, from: from ?? state.privateSha ?? null, sinceDate: prevDate, deny: denyList, log });
-      execFileSync('git', ['-C', out, 'commit', '-q', '-F', '-'], { env, input: commitMessage(subjects) });
+      if (!message?.trim()) throw new Error('there is something to publish, so --message "Subject" is required');
+      execFileSync('git', ['-C', out, 'commit', '-q', '-F', '-'], { env, input: `${message.trim()}\n` });
       committed = true;
     } else {
       log('the tree is identical to the last public commit');
@@ -368,7 +333,7 @@ export function updatePublic({ source, out, ref = 'HEAD', branch = 'main', from 
   if (push && unpushed) { run('push', '-q', 'origin', `HEAD:refs/heads/${branch}`); pushed = true; }
   return {
     out, committed, commit: g('rev-parse', '--short', 'HEAD'), prev: prev.slice(0, 7), omitted, unpushed, pushed,
-    subjects: subjects.subjects, files: committed ? g('diff', '--shortstat', 'HEAD~1', 'HEAD') : '',
+    files: committed ? g('diff', '--shortstat', 'HEAD~1', 'HEAD') : '',
   };
 }
 
@@ -384,7 +349,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
       console.log(`exported ${r.kept} file(s) to ${r.out}: one commit (${r.commit}), no remote, secret scan clean`);
       if (r.omitted.length) console.log(`omitted:\n${r.omitted.map((f) => `  ${f}`).join('\n')}`);
     } else {
-      const r = updatePublic({ ...common, branch: val('--branch') ?? 'main', from: val('--from'), push: args.includes('--push') });
+      const r = updatePublic({ ...common, branch: val('--branch') ?? 'main', message: val('--message'), push: args.includes('--push') });
       if (r.committed) console.log(`committed ${r.commit} on top of ${r.prev} in ${r.out}: ${r.files.trim()}, secret scan clean`);
       else console.log(`nothing to publish: ${r.out} already matches ${common.ref}`);
       if (r.pushed) console.log(`pushed ${r.commit} to origin`);

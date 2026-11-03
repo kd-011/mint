@@ -6,8 +6,8 @@
 #   ./build.sh              unit tests, then the release APK, aapt checks, dist/
 #   ./build.sh --test-only  cap sync and the JVM unit tests only
 #
-# A full Gradle build takes minutes: run it detached so it survives the
-# calling session, and poll the log:
+# A full Gradle build takes minutes: run it detached so it survives a
+# dropped shell, and poll the log:
 #   mkdir -p ~/.cache/mint-apk
 #   systemd-run --user --collect --unit=mint-apk-$(date +%s) \
 #     bash -c './build.sh > ~/.cache/mint-apk/build.log 2>&1; echo APK_BUILD_EXIT_CODE=$? >> ~/.cache/mint-apk/build.log'

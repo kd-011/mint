@@ -1,13 +1,16 @@
-# Two ways to run Mint in Docker.
+# Three ways to run Mint in Docker. Compose pulls the published image if it can and builds from source if not.
 #
 #   docker compose up                          Demo: invented data, no Redbark key, nothing kept.
-#                                              Open http://127.0.0.1:8980/ (use 127.0.0.1, not localhost).
-#   docker compose --profile real up -d mint   Real: your own book. Needs a .env (copy .env.example)
+#                                              Open http://127.0.0.1:8980/
+#   docker compose --profile local up -d local Your own book on this machine: no login proxy, no Redbark.
+#                                              Open http://127.0.0.1:8981/ The book stays in the mint-data volume.
+#   docker compose --profile real up -d mint   Your own book for your phone too. Needs a .env (copy .env.example)
 #                                              and a login proxy in front, see docs/self-hosting.md.
 #
-# Both publish on the host's loopback only. Put your own reverse proxy in front for anything else.
+# All of them publish on the host's loopback only. Run local or real, not both: they share the book.
 services:
   demo:
+    image: ghcr.io/kd-011/mint:latest
     build: .
     command: ["node", "scripts/demo-seed.mjs", "8980"]
     environment:
@@ -19,7 +22,25 @@ services:
       - "127.0.0.1:8980:8980"
     restart: "no"
 
+  local:
+    image: ghcr.io/kd-011/mint:latest
+    build: .
+    profiles: ["local"]
+    command: ["node", "scripts/local.mjs"]
+    environment:
+      MINT_HOME: /data
+      MINT_PORT: "8981"
+      # Same front as the demo. It refuses anything that does not arrive as 127.0.0.1 or localhost.
+      MINT_LOCAL_BIND: 0.0.0.0
+      MINT_TZ: ${MINT_TZ:-Australia/Perth}
+    ports:
+      - "127.0.0.1:8981:8981"
+    volumes:
+      - mint-data:/data
+    restart: unless-stopped
+
   mint:
+    image: ghcr.io/kd-011/mint:latest
     build: .
     profiles: ["real"]
     env_file: .env

@@ -199,7 +199,7 @@ test('too many receipt bytes is refused with a clear message', async () => {
   out.destroy();
 });
 
-// ---- the route ----
+// the route
 let srv, base, apiDir, rb;
 before(async () => {
   apiDir = tmp('mint-packapi-');

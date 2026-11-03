@@ -6,7 +6,7 @@
 
 const ACC_TABS = [['accounts', 'Accounts'], ['assets', 'Assets'], ['rules', 'Rules'], ['review', 'Review']];
 
-// ---------- sync card ----------
+// sync card
 
 function syncCardHtml() {
   const d = accountsData;
@@ -56,7 +56,7 @@ function wireSyncCard() {
   });
 }
 
-// ---------- accounts ----------
+// accounts
 
 function accountRow(a) {
   const sub = `${TYPE_LABEL[a.type] ?? titleCase(a.type)} · ${acctText(a.number_masked ?? '')}`;
@@ -164,7 +164,7 @@ function openAccount(id) {
     <p><a class="btn ghost wide" href="/transactions?account=${encodeURIComponent(a.id)}" data-nav>${I.list}Transactions</a></p>`, 'account');
 }
 
-// ---------- shares and super: manual snapshots ----------
+// shares and super: manual snapshots
 
 async function assetsSection(box, token) {
   let items = null;
@@ -288,7 +288,7 @@ async function openAsset(a, done) {
   });
 }
 
-// ---------- rules ----------
+// rules
 
 const MATCH_LABEL = { contains: 'contains', starts: 'starts with', exact: 'is exactly', regex: 'matches' };
 
@@ -427,7 +427,7 @@ function openRuleEditor(rule, done, removeLocal, restoreLocal, getRules, default
   });
 }
 
-// ---------- review ----------
+// review
 
 async function reviewSection(box, token) {
   box.innerHTML = `${skeletonRows(2)}`;
@@ -471,7 +471,7 @@ async function reviewSection(box, token) {
   });
 }
 
-// ---------- the screen ----------
+// the screen
 
 async function viewAccounts(el, token) {
   let section = new URLSearchParams(location.search).get('s');
@@ -532,12 +532,12 @@ async function viewAccounts(el, token) {
     if (section === 'rules') rulesSection(box, token);
     if (section === 'review') reviewSection(box, token);
   }
-  const onSynced = () => { if (token === renderToken && section === 'accounts') drawAccounts(); };
+  const onSynced = () => { if (token === renderToken && section === 'accounts') { drawAccounts(); const nw = $('#pane .acct-nw'); if (nw && shownAccountsData()) nw.textContent = money(shownAccountsData().totals.net_worth); } };
   accountsListeners.add(onSynced);
   cleanup.push(() => accountsListeners.delete(onSynced));
   setPaneDefault(() => {
     const d = shownAccountsData();
     if (!d) return skeletonRows(4);
-    return `<h2>Net worth</h2><div class="card"><div class="amount-big num">${esc(money(d.totals.net_worth))}</div><div class="sub">Synced ${esc(ago(d.sync.lastPollAt))}</div></div>`;
+    return `<h2>Net worth</h2><div class="card"><div class="amount-big num acct-nw">${esc(money(d.totals.net_worth))}</div>${d.sync.redbark === false ? '' : `<div class="sub">Synced ${esc(ago(d.sync.lastPollAt))}</div>`}</div>`;
   });
 }

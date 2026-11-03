@@ -53,7 +53,7 @@ function estimateCardHtml(est, { open, pending }) {
     ${swings ? `<div class="rows swings" aria-label="Open questions that could change the estimate">${swings}</div>` : ''}
     <section class="agroup ${open ? 'open' : ''}" id="estwork"><button class="row" type="button" data-esttoggle aria-expanded="${open}"><div class="main"><div class="t1">The working</div></div><span class="caret">${I.chevron}</span></button>
       <div class="abody"><div class="abody-in"><ul class="est-why wgroup-why">${est.confidence.reasons.map((r) => `<li>${esc(moneyText(r))}</li>`).join('')}</ul>${estWorking(est)}</div></div></section>
-    <p class="sub est-foot">Estimate, not tax advice</p></section>`;
+    <p class="sub est-foot">General information, not tax advice. Check it with the ATO or a registered tax agent.</p></section>`;
 }
 
 // Mount the card in `host`. Loads with a skeleton, shows a saved copy at once, retries with a real error.
@@ -107,7 +107,7 @@ function taxEstimateCard(host, { fy, token }) {
   return { reload: load };
 }
 
-// ---------- the edit sheet ----------
+// the edit sheet
 
 const triSeg = (name, value) => segmented(name, [['yes', 'Yes'], ['no', 'No'], ['unknown', 'Not sure']], value === true ? 'yes' : value === false ? 'no' : 'unknown');
 const triValue = (v) => (v === 'yes' ? true : v === 'no' ? false : null);

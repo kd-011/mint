@@ -216,7 +216,7 @@ test('validation: ticker, exchange, units, cost, lots and duplicates are refused
   createHolding(db, { ticker: 'VAS', exchange: 'US', units: 2, avg_cost: 1 }); // same ticker on another exchange is a different holding
 });
 
-// ---------- net worth ----------
+// net worth
 
 function nwBook() {
   const b = book();

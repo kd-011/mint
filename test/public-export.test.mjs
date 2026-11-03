@@ -70,7 +70,7 @@ function runFrom(srcRepo, args, scriptsDir = join(ROOT, 'scripts')) {
 // the fresh single-commit behaviour, now behind --fresh
 const exportFrom = (srcRepo, out, extra = [], scriptsDir) => runFrom(srcRepo, ['--fresh', '--out', out, ...extra], scriptsDir);
 // the default: one new commit on top of a persistent public checkout
-const updateFrom = (srcRepo, out, extra = [], scriptsDir) => runFrom(srcRepo, ['--out', out, ...extra], scriptsDir);
+const updateFrom = (srcRepo, out, extra = [], scriptsDir) => runFrom(srcRepo, ['--out', out, '--message', 'Add the widget screen', ...extra], scriptsDir);
 
 test('a clean repo exports as one commit, no remote, without data, env, keystores, shots or old screenshot folders', () => {
   const src = join(work, 'clean');
@@ -274,7 +274,7 @@ test('weaken the default identity: the export takes the source repo identity, so
   assert.notEqual(git(out, 'log', '--format=%an %ae %cn %ce'), PUBLIC_ID);
 });
 
-// ---- incremental export: one new commit on top of a persistent public checkout ----
+// incremental export: one new commit on top of a persistent public checkout
 
 // Land a change in the private repo: write files, remove files, commit.
 function privateCommit(src, subject, { write = {}, remove = [] } = {}) {
@@ -311,9 +311,7 @@ test('incremental: a private change becomes ONE new public commit on top, histor
   assert.equal(git(pub, 'rev-parse', 'HEAD~1'), first, 'on top of the previous public commit');
   assert.equal(git(pub, 'log', '--format=%an %ae %cn %ce'), `${PUBLIC_ID}\n${PUBLIC_ID}`);
   const body = git(pub, 'log', '-1', '--format=%B');
-  assert.match(body, /feat: add the widget screen/);
-  assert.match(body, /fix: widget rounding/);
-  assert.ok(!/private history/.test(body), 'commits before the last export are not listed');
+  assert.equal(body, 'Add the widget screen', 'the message is what was passed, with no private subject in it');
   assert.ok(existsSync(join(pub, 'lib', 'widget.mjs')) && !existsSync(join(pub, 'lib', 'thing.mjs')));
   assert.equal(readFileSync(join(pub, 'README.md'), 'utf8'), '# Demo\n\nUpdated.\n');
   for (const gone of ['.env', 'data', 'backups', '.shots']) assert.ok(!existsSync(join(pub, gone)), `${gone} stays out`);
@@ -340,18 +338,6 @@ test('incremental: nothing changed means no commit', () => {
   assert.equal(r.status, 0, r.stderr + r.stdout);
   assert.equal(git(pub, 'rev-parse', 'HEAD'), before);
   assert.match(r.stdout, /nothing to publish/);
-});
-
-test('incremental: a second run lists only what is new since the first (the marker moves)', () => {
-  const { src, pub } = makePublic('inc-twice');
-  privateCommit(src, 'feat: first batch', { write: { 'lib/a.mjs': 'export const a = 1;\n' } });
-  assert.equal(updateFrom(src, pub).status, 0);
-  privateCommit(src, 'feat: second batch', { write: { 'lib/b.mjs': 'export const b = 1;\n' } });
-  assert.equal(updateFrom(src, pub).status, 0);
-  assert.equal(count(pub), 3);
-  const last = git(pub, 'log', '-1', '--format=%B');
-  assert.match(last, /second batch/);
-  assert.ok(!/first batch/.test(last));
 });
 
 test('incremental: it refuses a dirty checkout (modified or untracked), changes nothing, and says why', () => {
@@ -446,15 +432,14 @@ test('incremental: the denylisted name or host in the change blocks the commit',
   }
 });
 
-test('incremental: a private commit subject that carries the name is left out of the public message', () => {
+test('incremental: a message that carries the name is refused, and nothing is committed', () => {
   const { src, pub } = makePublic('inc-subject');
-  privateCommit(src, `docs: thanks to ${FAKE_NAME}`, { write: { 'lib/s.mjs': 'export const s = 1;\n' } });
-  privateCommit(src, 'feat: harmless subject', { write: { 'lib/t.mjs': 'export const t = 1;\n' } });
-  const r = updateFrom(src, pub);
-  assert.equal(r.status, 0, r.stderr + r.stdout);
-  const log = git(pub, 'log', '--all', '--format=%B');
-  assert.match(log, /harmless subject/);
-  assert.ok(!log.toLowerCase().includes(FAKE_NAME.toLowerCase()));
+  privateCommit(src, 'feat: s', { write: { 'lib/s.mjs': 'export const s = 1;\n' } });
+  const head = git(pub, 'rev-parse', 'HEAD');
+  const r = runFrom(src, ['--out', pub, '--message', `Thanks to ${FAKE_NAME}`]);
+  assert.notEqual(r.status, 0);
+  assert.equal(git(pub, 'rev-parse', 'HEAD'), head);
+  assert.equal(git(pub, 'status', '--porcelain'), '');
 });
 
 test('incremental: the private sha marker lives outside the public tree and never reaches it', () => {
@@ -537,14 +522,15 @@ test('the scan lets invented BSB columns through in the CSV fixtures only, in th
   assert.match(bad.stderr, /BSB and account/);
 });
 
-test('incremental: a landed-branch subject is listed as a plain phrase, not as a branch name', () => {
-  const { src, pub } = makePublic('inc-merge-subject');
-  privateCommit(src, 'Merge feature/mint-widget-screen-for-bills-mvabc123', { write: { 'lib/w.mjs': 'export const w = 1;\n' } });
-  const r = updateFrom(src, pub);
-  assert.equal(r.status, 0, r.stderr + r.stdout);
-  const body = git(pub, 'log', '-1', '--format=%B');
-  assert.match(body, /- Widget screen for bills/);
-  assert.ok(!/coder\/|mvabc123|Merge/.test(body), 'no branch name, no task id');
+test('incremental: with something to publish and no --message it refuses, changing nothing', () => {
+  const { src, pub } = makePublic('inc-no-message');
+  privateCommit(src, 'Merge a private branch', { write: { 'lib/w.mjs': 'export const w = 1;\n' } });
+  const head = git(pub, 'rev-parse', 'HEAD');
+  const r = runFrom(src, ['--out', pub]);
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /--message/);
+  assert.equal(git(pub, 'rev-parse', 'HEAD'), head);
+  assert.equal(git(pub, 'status', '--porcelain'), '');
 });
 
 // The diff scan, on its own. The staged tree is scanned before it, so through the whole pipeline a planted

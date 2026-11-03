@@ -124,7 +124,7 @@ async function viewIncome(el, token) {
         : `<div class="card quiet"><div class="quietline">${I.check}<span>Nothing else has come in lately.</span></div></div>`}`;
   }
 
-  // ---- income by financial year, against the NoAs ----
+  // income by financial year, against the NoAs
   let fyData = null;
   const noaFmt = (c) => (c == null ? '\u2013' : money0(c));
   const signed = (c) => `${c < 0 ? '-' : '+'}${money0(Math.abs(c))}`;
@@ -181,7 +181,7 @@ async function viewIncome(el, token) {
     $('#noaedit', panel)?.addEventListener('click', () => { closeModal(); openNoaEditor(y); });
   }
 
-  // ---- one year's NoA: the figures off the Notice of Assessment ----
+  // one year's NoA: the figures off the Notice of Assessment
   const NOA_FIELDS = [
     ['taxable_income', 'Taxable income', true], ['tax_withheld_payg', 'Tax withheld (PAYG)', true], ['assessed_tax', 'Tax assessed'], ['medicare', 'Medicare levy'],
     ['vet_repayment', 'Study loan repayment'], ['refund', 'Refund (minus if owing)'], ['capital_gains', 'Capital gains'],
@@ -258,7 +258,7 @@ async function viewIncome(el, token) {
     }
   });
 
-  // ---- one deposit: what kind of money is it? ----
+  // one deposit: what kind of money is it?
   function openDepositSheet(row) {
     const isReimb = (inc.reimbursed_recent ?? []).some((x) => x.id === row.id);
     const now = isReimb ? 'reimbursement' : 'other';
@@ -299,7 +299,7 @@ async function viewIncome(el, token) {
     });
   }
 
-  // ---- a stream: edit it, with a live preview of what the edit moves ----
+  // a stream: edit it, with a live preview of what the edit moves
   function openStreamEditor(src, seed = null) {
     const accts = (accountsData?.accounts ?? []).filter((a) => !a.hidden);
     const v = src ?? seed ?? { name: '', kind: 'regular', match: 'contains', pattern: '', amount_min: null, amount_max: null, cadence_days: 14 };

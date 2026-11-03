@@ -1,10 +1,8 @@
 # Security policy
 
-Mint holds bank data, so I take security reports seriously.
+Mint holds bank data, so report problems privately, never in a public issue.
 
 ## Reporting a vulnerability
-
-Please do not open a public issue.
 
 Use GitHub's private vulnerability reporting: on the repository, open the Security tab and choose "Report a vulnerability" (https://github.com/kd-011/mint/security/advisories/new). Say what you found and how to reproduce it. Never include real financial data, real names or live credentials; invented data and the demo (`node scripts/demo-seed.mjs`) are enough to show a problem.
 
@@ -29,4 +27,4 @@ Only the latest release and `main`.
 
 ## Hardening notes for operators
 
-See "Security" in the README and docs/self-hosting.md: keep Mint on loopback behind your own login, use a `MINT_GATE_KEY` of 32 or more characters, keep `.env` at mode 600, and treat `data/` and every backup as sensitive.
+See [docs/faq.md](docs/faq.md#security) and [docs/self-hosting.md](docs/self-hosting.md): keep Mint on loopback behind your own login, use a `MINT_GATE_KEY` of 32 or more characters, keep `.env` at mode 600, and treat `data/` and every backup as sensitive.

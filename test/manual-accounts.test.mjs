@@ -255,7 +255,7 @@ test('a backup round-trips manual accounts, their rows and the exchange rates', 
   assert.equal(back.prepare("SELECT count(*) n FROM fx_rates WHERE currency = 'USD'").get().n, 3);
 });
 
-// ---------- through the HTTP API, on a real server ----------
+// through the HTTP API, on a real server
 
 const T = new Intl.DateTimeFormat('en-CA', { timeZone: 'Australia/Perth' }).format(new Date());
 let proc, base, fakeSrv, fxSrv;
@@ -358,7 +358,7 @@ test('API: CSV import previews, imports once, re-imports nothing and undoes as o
   assert.equal((await json(await get('/api/accounts'))).accounts.find((x) => x.id === a.id).balance_native, 0);
 });
 
-// ---------- through the assistant chat door ----------
+// through the assistant chat door
 
 test('chat door: add a manual account and a transaction on it, each with an undo that puts the book back', async () => {
   const { createServer } = await import('node:http');

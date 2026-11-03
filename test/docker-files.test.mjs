@@ -40,12 +40,12 @@ test('.dockerignore keeps secrets and data out but not anything the Dockerfile c
   assert.ok(!ign.includes('test') && !ign.includes('test/fixtures'));
 });
 
-test('compose: a demo that runs by default and a real service behind a profile, both on host loopback', () => {
+test('compose: a demo that runs by default, and local and real services behind profiles, all on host loopback', () => {
   const c = read('docker-compose.yml');
   assert.match(c, /^services:\n {2}demo:/m);
   assert.match(c, /^ {2}mint:\n(?:.*\n)*? {4}profiles: \["real"\]/m);
   const ports = [...c.matchAll(/^\s+- "([^"]+)"$/gm)].map((m) => m[1]).filter((p) => /:\d+:\d+$/.test(p));
-  assert.equal(ports.length, 2);
+  assert.equal(ports.length, 3);
   for (const p of ports) assert.match(p, /^127\.0\.0\.1:/, `${p} publishes on the host's loopback only`);
   assert.match(c, /mint-data:\/data/);
   // the demo command points at a real script

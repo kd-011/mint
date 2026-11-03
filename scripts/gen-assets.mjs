@@ -33,7 +33,7 @@ const chromium = pw.chromium ?? pw.default.chromium;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const freePort = () => new Promise((res) => { const s = createServer().listen(0, '127.0.0.1', () => { const { port } = s.address(); s.close(() => res(port)); }); });
 
-// ---- the demo -------------------------------------------------------------------------------
+// the demo
 async function startDemo() {
   const port = await freePort();
   const child = spawn(process.execPath, [join(ROOT, 'scripts/demo-seed.mjs'), String(port)], { stdio: ['ignore', 'pipe', 'inherit'], cwd: ROOT });
@@ -51,7 +51,7 @@ const PHONE = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isM
 const DESK = { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1, serviceWorkers: 'block' };
 const squeeze = (file) => { try { execFileSync('convert', [file, '-strip', '-define', 'png:compression-level=9', file]); } catch { /* convert is optional */ } };
 
-// ---- screenshots ----------------------------------------------------------------------------
+// screenshots
 // The screens live in scripts/shot-list.mjs; test/demo-seed.test.mjs checks that every search in it finds real spending.
 const SCREENS = shotList({ today: zoneDate() });
 async function shots(browser, base) {
@@ -71,7 +71,7 @@ async function shots(browser, base) {
   }
 }
 
-// ---- HTML pages for the banner, hero and social card ---------------------------------------------
+// HTML pages for the banner, hero and social card
 const MINT = '#3ddc97';
 const HEAD = `<meta charset="utf-8"><style>
 @font-face{font-family:Geist;src:url("${FONTS}");font-weight:100 900}
@@ -130,7 +130,7 @@ async function render(browser, html, { width, height, out, scale = 1 }) {
   squeeze(out);
 }
 
-// ---- the animated demo ----------------------------------------------------------------------------
+// the animated demo
 // One phone, one real flow: net worth, a search that finds a month of groceries with its total, the
 // pay split plan, a goal. Recorded by Playwright, then cut and palette-squeezed into a GIF.
 async function demoGif(browser, base) {
@@ -167,7 +167,7 @@ async function demoGif(browser, base) {
   console.log(`demo.gif ${(statSync(out).size / 1024).toFixed(0)} KB`);
 }
 
-// ---- main -----------------------------------------------------------------------------------------
+// main
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM, args: ['--no-sandbox'] });
 const demo = await startDemo();
 try {

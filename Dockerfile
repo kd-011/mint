@@ -2,6 +2,10 @@
 # node:sqlite ships inside Node 22, so there is nothing else to add.
 FROM node:22-alpine
 
+LABEL org.opencontainers.image.source="https://github.com/kd-011/mint" \
+      org.opencontainers.image.description="Self-hosted personal finance for Australians" \
+      org.opencontainers.image.licenses="AGPL-3.0-only"
+
 ENV NODE_ENV=production \
     MINT_HOME=/data \
     MINT_HOST=0.0.0.0 \

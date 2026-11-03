@@ -94,7 +94,7 @@ function subsSection(box, token, { embedded = false } = {}) {
 }
 const subSkeleton = () => `<div class="sec-head"><h2>Your subscriptions</h2></div>${skeletonCard(110)}${skeletonRows(4)}`;
 
-// ---------- one subscription ----------
+// one subscription
 
 function subLine(label, value) { return `<div class="erow static"><span class="k">${esc(label)}</span><span class="v">${value}</span></div>`; }
 

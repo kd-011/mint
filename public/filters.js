@@ -49,7 +49,7 @@ function filterSummaryHtml(f) {
   return `<button class="fchip clr" type="button" id="fclearall" title="Remove every filter and the search">${I.x}Clear all</button>${all.map(([k, label]) => `<button class="fchip act" type="button" data-rm="${k}" aria-label="Remove filter ${esc(label)}" title="Remove this filter">${esc(label)}${I.x}</button>`).join('')}`;
 }
 
-// ---------- the popover ----------
+// the popover
 
 function placeDropdown(pop, anchor, wide) {
   const vw = document.documentElement.clientWidth;
@@ -108,7 +108,7 @@ function openDropdown(anchor, key, { title, html, wide = false, wire, commit }) 
 const ddRow = (attr, value, label, { on = false, sub = '' } = {}) =>
   `<button class="crow ${on ? 'on' : ''}" type="button" role="option" aria-selected="${on}" data-${attr}="${esc(value)}"><span>${esc(label)}${sub ? `<small class="dd-sub">${esc(sub)}</small>` : ''}</span>${on ? I.check : ''}</button>`;
 
-// ---------- each dropdown ----------
+// each dropdown
 
 function accountDropdown(anchor, f, apply) {
   const groups = UxModel.accountGroups(accountsData?.accounts ?? [], { selected: f.account, name: accountName });

@@ -13,7 +13,7 @@ import {
 const HOUR = 3600_000;
 const DAY = 24 * HOUR;
 
-// ---------- fixtures ----------
+// fixtures
 
 // A PNG signature and IHDR (width x height) padded to `size` bytes. Enough for
 // the magic-byte and dimension checks; never decoded.
@@ -69,7 +69,7 @@ function setup({ spends = {}, routes = {}, ai = null, now = Date.parse('2026-10-
   return { ...b, logos, net: n, clock, aiCalls, row };
 }
 
-// ---------- domain resolution ----------
+// domain resolution
 
 test('the built-in map covers 80+ AU merchants and resolves on the derived merchant, with or without a branch', () => {
   assert.ok(Object.keys(LOGO_DOMAINS).length >= 80, `only ${Object.keys(LOGO_DOMAINS).length} entries`);
@@ -115,7 +115,7 @@ test('isPrivateAddress flags every private, loopback and link-local range', () =
   for (const a of ['8.8.8.8', '142.250.1.1', '2001:4860:4860::8888', '172.32.0.1']) assert.equal(isPrivateAddress(a), false, a);
 });
 
-// ---------- image validation ----------
+// image validation
 
 test('image validation goes by magic bytes: PNG, ICO, JPEG and WebP pass', () => {
   assert.deepEqual(checkIcon(png()), { ok: true, type: 'image/png' });
@@ -142,7 +142,7 @@ test('image validation rejects wrong bytes, SVG, GIF, oversize, tiny, 8px and kn
   assert.equal(checkIcon(null).ok, false);
 });
 
-// ---------- the run: resolve, fetch, cache ----------
+// the run: resolve, fetch, cache
 
 test('a map hit is fetched from Google s2 and cached; no model call is made', async () => {
   const t = setup({ spends: { WOOLWORTHS: 12000 }, routes: { [G('woolworths.com.au')]: ok(png()) } });
@@ -270,7 +270,7 @@ test('the same domain is fetched once and reused for another merchant key', asyn
   assert.equal(t.net.calls.length, 1);
 });
 
-// ---------- the model pass ----------
+// the model pass
 
 const aiRoutes = { 'https://obscurebakery.com.au/': { status: 200, headers: {}, body: Buffer.alloc(0) }, [G('obscurebakery.com.au')]: ok(png()) };
 
@@ -337,7 +337,7 @@ test('the model pass respects the daily cap and does nothing without a key', asy
   assert.equal(r.error ?? null, null);
 });
 
-// ---------- manual override ----------
+// manual override
 
 test('a manual domain is validated, fetched and kept; a sync pass never overwrites it', async () => {
   const t = setup({ spends: { WOOLWORTHS: 9000 }, routes: { [G('example.org')]: ok(png()), [G('woolworths.com.au')]: ok(png(64, 64)) } });
@@ -380,7 +380,7 @@ test('clearing a manual logo keeps the merchant on a letter tile for good', asyn
   assert.equal(t.row('woolworths').domain, null);
 });
 
-// ---------- the payload hint ----------
+// the payload hint
 
 test('the page gets a logo hint only for merchants with a cached image', async () => {
   const t = setup({ spends: { WOOLWORTHS: 9000, COLES: 5000, 'QUIET FIXERS': 100 }, routes: { [G('woolworths.com.au')]: ok(png()), [G('coles.com.au')]: ok(Buffer.from('nope')) } });
@@ -409,7 +409,7 @@ test('the transfer legs of the book are not looked up', async () => {
   assert.equal(t.net.calls.length, 0);
 });
 
-// ---------- the real fetcher's guards (no internet: these never leave the box) ----------
+// the real fetcher's guards (no internet: these never leave the box)
 
 test('the real fetcher refuses a name that resolves to loopback, an IP literal, a non-https URL and credentials', async () => {
   const { safeHop } = await import('../lib/logos.mjs');

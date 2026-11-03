@@ -20,7 +20,7 @@ const chatUi = (() => {
     { cmd: '/undo', desc: 'Undo the last change' },
   ];
 
-  // ---------- state ----------
+  // state
 
   // A reply that was streaming when the page went away will never finish: restore() marks it.
   const S = {
@@ -35,7 +35,7 @@ const chatUi = (() => {
     store.set('chat', { id: S.id, msgs: keep, queue: S.queue });
   }
 
-  // ---------- elements ----------
+  // elements
 
   let root, panel, log, ta, sendBtn, chips, slashEl, queueEl, noteEl;
 
@@ -78,7 +78,7 @@ const chatUi = (() => {
     noteEl = $('.chnote', root);
   }
 
-  // ---------- rendering ----------
+  // rendering
 
   const sampleRow = (r) => `<li><span class="cs-d">${esc(dmy(r.date))}</span><span class="cs-m">${esc(r.merchant ?? '')}</span><span class="cs-a num">${esc(money(r.amount))}</span><span class="cs-c">${esc(r.from ?? '')} ${I.chevron}${esc(r.to ?? '')}</span></li>`;
   const countsLine = (c) => (c ? Object.entries(c).filter(([, n]) => n).map(([t, n]) => `${n.toLocaleString('en-AU')} ${t.replace(/_/g, ' ').replace(n === 1 ? /s$/ : /$^/, '')}`).join(', ') : '');
@@ -201,7 +201,7 @@ const chatUi = (() => {
     syncComposer();
   }
 
-  // ---------- slash commands ----------
+  // slash commands
 
   function slashList() {
     const v = ta.value;
@@ -230,7 +230,7 @@ const chatUi = (() => {
     return null;
   }
 
-  // ---------- talking to Mint ----------
+  // talking to Mint
 
   async function postChat(body, signal) {
     if (demoActive()) { demoToast(); throw demoError(); } // chat answers carry real figures
@@ -356,7 +356,7 @@ const chatUi = (() => {
     document.dispatchEvent(new CustomEvent('mint:data'));
   }
 
-  // ---------- undo and confirm ----------
+  // undo and confirm
 
   async function act(kind, token, body = {}) {
     if (demoActive()) { demoToast(); return { status: 0, error: DEMO_BLOCKED_MSG }; }
@@ -426,7 +426,7 @@ const chatUi = (() => {
     renderMsg(msg);
   }
 
-  // ---------- clearing ----------
+  // clearing
 
   function askClear() {
     const p = openModal(`${sheetHead(null, 'Clear this chat?')}
@@ -445,7 +445,7 @@ const chatUi = (() => {
     });
   }
 
-  // ---------- open and close ----------
+  // open and close
 
   function fit() {
     const vv = window.visualViewport;
@@ -483,7 +483,7 @@ const chatUi = (() => {
     if (back?.isConnected && back !== document.body) back.focus({ preventScroll: true });
   }
 
-  // ---------- wiring ----------
+  // wiring
 
   function wire() {
     root.addEventListener('click', (e) => {

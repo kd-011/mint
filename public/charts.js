@@ -90,7 +90,7 @@ const gradId = (pre, color) => `${pre}-${color.slice(1)}`;
 const barDefs = (pre, colors) => `<defs>${[...new Set(colors)].map((c) => `<linearGradient id="${gradId(pre, c)}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${lighten(c)}"/><stop offset="1" stop-color="${c}"/></linearGradient>`).join('')}</defs>`;
 let chartUid = 0;
 
-// ---------- line / area over dates ----------
+// line / area over dates
 // series: [{ name, color, area, points: [[isoDate, cents], ...] }]
 
 function mountLine(el, { series, fmt = money, tipFmt = fmt, height = 220, axes = true, label = 'Chart', zero = true, today = null }) {
@@ -170,7 +170,7 @@ function mountLine(el, { series, fmt = money, tipFmt = fmt, height = 220, axes =
   watchWidth(el, draw);
 }
 
-// ---------- bars ----------
+// bars
 // cols: [{ label, tip, values: { key: cents } }]; keys: [{ key, name, color }]
 // mode 'stack' stacks the keys; 'group' puts them side by side.
 // Optional: a column's `dim` fades its bars (data that only part covers) and `notes` adds

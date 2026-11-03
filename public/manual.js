@@ -14,7 +14,7 @@ const manHex = (prefix) => `${prefix}_${[...crypto.getRandomValues(new Uint8Arra
 const isManual = (a) => !!a?.manual;
 const foreign = (a) => isManual(a) && a.currency && a.currency !== 'AUD';
 
-// ---------- currencies ----------
+// currencies
 
 let manCurrencies = store.get('fx:currencies');
 async function loadCurrencies() {
@@ -55,7 +55,7 @@ function pickCurrency(selected = 'AUD') {
   });
 }
 
-// ---------- rows and notes ----------
+// rows and notes
 
 // "At 1.5216, rate from 16/10/2026" when the rate is old or could not refresh; '' when fresh.
 function fxNote(a) {
@@ -137,7 +137,7 @@ async function manualChanged() {
   document.dispatchEvent(new CustomEvent('mint:txchanged'));
 }
 
-// ---------- add or edit an account ----------
+// add or edit an account
 
 function openManualAccountForm(a = null, { thenImport = false } = {}) {
   let cur = a?.currency ?? 'AUD';
@@ -195,7 +195,7 @@ function openManualAccountForm(a = null, { thenImport = false } = {}) {
         const id = manHex('man');
         const full = { ...body, id, currency: cur, is_business: biz?.() === 'biz' };
         newId = id;
-        const r = await withBusy($('button[type=submit]', form), 'Adding, fetching the rate', () => mutate({ method: 'POST', path: '/api/manual/accounts', body: full }));
+        const r = await withBusy($('button[type=submit]', form), cur === 'AUD' ? 'Adding' : 'Adding, fetching the rate', () => mutate({ method: 'POST', path: '/api/manual/accounts', body: full }));
         d.clear();
         closeSheet();
         if (r.queued) {
@@ -216,7 +216,7 @@ function openManualAccountForm(a = null, { thenImport = false } = {}) {
   });
 }
 
-// ---------- the account sheet ----------
+// the account sheet
 
 async function openManualAccount(id) {
   const a = acctById(id);
@@ -340,7 +340,7 @@ function openSetBalance(a, done) {
   });
 }
 
-// ---------- a transaction by hand ----------
+// a transaction by hand
 
 function openManualTxForm(a, t = null) {
   const today = todayIso();
@@ -412,7 +412,7 @@ function openManualTxForm(a, t = null) {
   });
 }
 
-// ---------- CSV import ----------
+// CSV import
 
 async function fileBase64(file) {
   const bytes = new Uint8Array(await file.arrayBuffer());

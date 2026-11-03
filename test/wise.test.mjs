@@ -41,7 +41,7 @@ const everything = (db) => JSON.stringify({
   settings: db.prepare('SELECT * FROM settings').all(), alerts: db.prepare('SELECT * FROM alerts').all(),
 });
 
-// ---------- client ----------
+// client
 
 test('the client sends GET only, to api.wise.com, with the bearer token and no redirects', async () => {
   const { wise, client } = setup();
@@ -134,7 +134,7 @@ test('an SCA refusal is recognised as one, with the status and a plain message',
     (e) => e instanceof WiseError && e.status === 403 && e.sca === true && /strong customer authentication/i.test(e.message));
 });
 
-// ---------- sync: accounts ----------
+// sync: accounts
 
 test('first sync: one manual Wise account per currency that has money or history, keyed by the Wise balance id', async () => {
   const { db, sync, wise } = setup();
@@ -201,7 +201,7 @@ test('an archived Wise account stays archived and is not synced into', async () 
   assert.equal(db.prepare('SELECT status FROM accounts WHERE id = ?').get(usd.id).status, 'gone');
 });
 
-// ---------- sync: rows ----------
+// sync: rows
 
 test('statement rows import with Perth dates, cents, descriptions, merchants and the opening balance from Wise, and the balance matches with no adjustment', async () => {
   const { db, sync } = setup();
@@ -289,7 +289,7 @@ test('balance snapshots exist for the account and end on Wise figure', async () 
   assert.equal(snaps.at(-1).native, 154_724);
 });
 
-// ---------- sync: currencies ----------
+// sync: currencies
 
 test('a USD account converts every row at the rate for its date, and the balance at the latest rate', async () => {
   const { db, sync, ff } = setup();
@@ -333,7 +333,7 @@ test('rates already in fx_rates are used without fetching', async () => {
   assert.equal(rowsOf(db, accountOf(db, 'USD').id)[0].fx_rate, 1.6);
 });
 
-// ---------- SCA ----------
+// SCA
 
 test('statements refused for SCA: balances only, the balance is still exact, and the account says so', async () => {
   const { db, sync, wise } = setup();
@@ -375,7 +375,7 @@ test('balances refused for SCA: the sync fails with the exact status and a token
   assert.match(sync.status().error, /403/);
 });
 
-// ---------- failure visibility ----------
+// failure visibility
 
 test('a failed run is one sync_log row and a status the page can show, and it clears on the next good run', async () => {
   const { db, sync, wise } = setup();
@@ -408,7 +408,7 @@ test('a currency that fails marks only its own account, and a retry fixes it', a
   assert.equal(accountOf(db, 'USD').last_sync_error, null);
 });
 
-// ---------- off without a token ----------
+// off without a token
 
 test('no token: the sync is off, makes no call, logs nothing, raises no alert', async () => {
   const wise = fakeWise();
@@ -441,7 +441,7 @@ test('alerts: a failing Wise account and a failing Wise sync alert only when Wis
   assert.ok(!JSON.stringify(run2).includes(FAKE_TOKEN));
 });
 
-// ---------- the token never leaks ----------
+// the token never leaks
 
 test('the token is in no error, sync_log row, setting, account or alert, even when Wise echoes it back', async () => {
   const { db, sync, wise } = setup();
@@ -482,7 +482,7 @@ test('an invalid token is reported as such, plainly', async () => {
   assert.ok(!r.error.includes('some-other-token'));
 });
 
-// ---------- the shared queue: Redbark ingest runs it ----------
+// the shared queue: Redbark ingest runs it
 
 function ingestWith(wiseHook) {
   const fake = fakeRedbark({ ...fixtures, accounts: [...fixtures.accounts], transactions: {} });

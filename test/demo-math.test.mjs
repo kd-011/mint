@@ -167,7 +167,7 @@ test('the toast text is the one the owner asked for', () => {
   assert.equal(m.DEMO_BLOCKED_MSG, 'Turn off demo mode to make changes');
 });
 
-// ---- made-up balances for empty cash accounts ----
+// made-up balances for empty cash accounts
 
 const acct = (over = {}) => ({ id: 'acc_offset', type: 'transaction', balance_current: 0, manual: false, currency: 'AUD', ...over });
 const shownDollars = (cents, f) => m.demoScale(cents, ON(f)) / 100;

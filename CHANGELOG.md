@@ -4,6 +4,29 @@ All notable changes to Mint are listed here. The format follows [Keep a Changelo
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-03
+
+Mint works for someone with no bank feed and no login proxy.
+
+### Added
+- Local mode: `docker compose --profile local up -d local` (or `node scripts/local.mjs`) runs your own book on this machine at <http://127.0.0.1:8981/> with no login proxy. A small front adds the gateway headers and only answers requests addressed to `127.0.0.1` or `localhost`. The book stays in the `mint-data` volume, and moving to a login proxy later keeps it.
+- Pay found from CSV statements. A book with no bank feed now finds its salary from the same payer, a steady amount and a weekly, fortnightly or monthly rhythm, so pay cycles, cycle budgets, safe to spend and starter budgets appear after an import. Before this a CSV book only got them by adding a stream by hand. A book that has already found its pay, or has streams of its own, is left alone.
+- A container image, `ghcr.io/kd-011/mint`, for amd64 and arm64, published by `.github/workflows/release.yml` when `CHANGELOG.md` gains a version. `docker-compose.yml` pulls it and builds from source if it cannot.
+
+### Changed
+- The README is short. Features, the comparison, the FAQ, configuration and backups moved to `docs/`.
+- The tax estimate and the accountant pack say general information, not tax advice, and name the ATO or a registered tax agent.
+- The demo prints two lines, shows a loading page until its data is in, and takes writes from `localhost` as well as `127.0.0.1`.
+- `@capacitor/android`, `cli` and `core` move to 8.5.3 in the Android shell.
+
+### Fixed
+- Adding an AUD account no longer needs Frankfurter to be reachable.
+- Merchant names from a CSV statement drop the `Card xx1234` and `Value Date:` tails.
+- The Accounts side pane shows the new total after you add an account, and no longer says "Synced never" on a book with no feed.
+- The lock cover no longer flashes the gateway line while it is only checking.
+
+## [0.2.0] - 2026-11-03
+
 ### Added
 - Timezone support. `MINT_TZ` takes any IANA zone name (default `Australia/Perth`, so an install that sets nothing behaves as before). Days, pay cycles, the financial year, the nightly reconcile, alert dates and exported dates all follow it, and the browser formats dates in the same zone. A misspelt name stops Mint at start with a message that names the variable. See [Timezone](docs/self-hosting.md#timezone).
 - A first-class path without Redbark. With `REDBARK_API_KEY` unset there is no poll, no nightly job and no Redbark wording in the app. A fresh book offers "Add an account and import a CSV" on its first screen.
@@ -20,7 +43,7 @@ All notable changes to Mint are listed here. The format follows [Keep a Changelo
 
 ## [0.1.0] - 2026-11-01
 
-First public release, published as a scrubbed one-commit export of a private working repository.
+First public release.
 
 - Pay-cycle budgets found from salary deposits, with rollover, and a "safe to spend until payday" figure.
 - A pay split plan with a check that each payday's transfers happened.
@@ -32,5 +55,7 @@ First public release, published as a scrubbed one-commit export of a private wor
 - A progressive web app with offline reads and queued edits, a passkey lock, encrypted off-box backups with a restore test, and an optional Android shell.
 - Zero npm dependencies, Node 22, one SQLite file. AGPL-3.0.
 
-[Unreleased]: https://github.com/kd-011/mint/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/kd-011/mint/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/kd-011/mint/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/kd-011/mint/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/kd-011/mint/releases/tag/v0.1.0

@@ -165,7 +165,7 @@ test('setAssessment validates: whole cents, a real year, nothing negative where 
   assert.throws(() => deleteAssessment(db, 2031), /no NoA/);
 });
 
-// ---------- the HTTP surface ----------
+// the HTTP surface
 
 let proc, base;
 const H = { 'remote-user': 'owner', 'x-mint-gate': GATE_KEY };
