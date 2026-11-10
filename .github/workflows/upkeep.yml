@@ -26,7 +26,7 @@ jobs:
         with:
           args: >-
             --max-retries 3 --retry-wait-time 10 --timeout 30 --no-progress
-            --accept '200..=299,429'
+            --accept '200..=299,429' --exclude-loopback
             './README.md' './CONTRIBUTING.md' './CHANGELOG.md' './SECURITY.md' './docs/*.md'
           output: lychee/out.md
           fail: false
