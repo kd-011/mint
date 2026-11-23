@@ -7,3 +7,6 @@ node_modules/
 keystore.properties
 *.password
 shell.env
+e2e/.results/
+reports/
+.stryker-tmp/

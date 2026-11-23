@@ -1,0 +1,1 @@
+/tmp/mint-export-srwm2b/docs/architecture/money-plan.md

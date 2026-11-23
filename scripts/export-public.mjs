@@ -71,6 +71,11 @@ export const EXCLUDE = [
   /^android-shell\/dist\//,
   /^\.claude\//,
   /^(CLAUDE|AGENTS)\.md$/,
+  // The private merge gate's wiring: it names the tooling around Mint, which the public tree has no use for.
+  /^\.\w+-gate\.json$/,
+  /^e2e\//,
+  /^scripts\/(gate-mutation|e2e-preview)\.mjs$/,
+  /^test\/gate-mutation\.test\.mjs$/,
 ];
 
 export function isExcluded(rel, extra = []) {
