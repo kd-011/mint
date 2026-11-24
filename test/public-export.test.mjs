@@ -522,15 +522,56 @@ test('the scan lets invented BSB columns through in the CSV fixtures only, in th
   assert.match(bad.stderr, /BSB and account/);
 });
 
-test('incremental: with something to publish and no --message it refuses, changing nothing', () => {
-  const { src, pub } = makePublic('inc-no-message');
-  privateCommit(src, 'Merge a private branch', { write: { 'lib/w.mjs': 'export const w = 1;\n' } });
-  const head = git(pub, 'rev-parse', 'HEAD');
+test('incremental: with no --message the commit message is composed from the private subjects since the last export', () => {
+  const { src, pub } = makePublic('inc-composed');
+  const first = git(pub, 'rev-parse', 'HEAD');
+  privateCommit(src, 'Add the widget screen (#12)', { write: { 'lib/w.mjs': 'export const w = 1;\n' } });
+  privateCommit(src, 'Merge coder/fix-widget-rounding-mwabc123', { write: { 'lib/w2.mjs': 'export const w = 2;\n' } });
+  privateCommit(src, 'Merge coder/fix-failing-subscriptions-test-m-mwu1v6mz', { write: { 'lib/w3.mjs': 'export const w = 3;\n' } });
+  privateCommit(src, 'Fix the rollover bug', { write: { 'README.md': '# Demo\n\nUpdated.\n' } });
   const r = runFrom(src, ['--out', pub]);
-  assert.notEqual(r.status, 0);
-  assert.match(r.stderr, /--message/);
-  assert.equal(git(pub, 'rev-parse', 'HEAD'), head);
+  assert.equal(r.status, 0, r.stderr + r.stdout);
+  assert.equal(count(pub), 2, 'exactly one commit was added');
+  assert.equal(git(pub, 'rev-parse', 'HEAD~1'), first);
+  const body = git(pub, 'log', '-1', '--format=%B');
+  assert.match(body, /^Mint update \d{4}-\d{2}-\d{2}: 4 changes\n\n/);
+  assert.deepEqual(body.split('\n').slice(2), ['- Fix the rollover bug', '- Fix failing subscriptions test...', '- Fix widget rounding', '- Add the widget screen']);
+  assert.ok(!/#12|mwabc123|coder\//.test(body), 'the private PR number and branch id stay private');
   assert.equal(git(pub, 'status', '--porcelain'), '');
+});
+
+test('incremental: only subjects since the last export are listed', () => {
+  const { src, pub } = makePublic('inc-composed-since');
+  privateCommit(src, 'Old change', { write: { 'lib/a.mjs': 'export const a = 1;\n' } });
+  assert.equal(runFrom(src, ['--out', pub]).status, 0);
+  privateCommit(src, 'New change', { write: { 'lib/b.mjs': 'export const b = 1;\n' } });
+  const r = runFrom(src, ['--out', pub]);
+  assert.equal(r.status, 0, r.stderr + r.stdout);
+  const body = git(pub, 'log', '-1', '--format=%B');
+  assert.match(body, /- New change/);
+  assert.ok(!body.includes('Old change'));
+});
+
+test('incremental: a private subject that trips the scan is left out of the composed message, never published', () => {
+  const { src, pub } = makePublic('inc-composed-scan');
+  privateCommit(src, `Rotate ${FAKE_KEY}`, { write: { 'lib/k.mjs': 'export const k = 1;\n' } });
+  privateCommit(src, `Credit ${FAKE_NAME}`, { write: { 'lib/k2.mjs': 'export const k = 2;\n' } });
+  privateCommit(src, 'Tidy the keys screen', { write: { 'lib/k3.mjs': 'export const k = 3;\n' } });
+  const r = runFrom(src, ['--out', pub]);
+  assert.equal(r.status, 0, r.stderr + r.stdout);
+  const body = git(pub, 'log', '-1', '--format=%B');
+  assert.match(body, /- Tidy the keys screen/);
+  assert.match(body, /\(2 subjects left out\)/);
+  assert.ok(!body.includes(FAKE_KEY) && !body.toLowerCase().includes(FAKE_NAME.toLowerCase()));
+  assert.ok(!r.stdout.includes(FAKE_KEY) && !r.stderr.includes(FAKE_KEY));
+});
+
+test('incremental: an explicit --message still wins over the composed one', () => {
+  const { src, pub } = makePublic('inc-explicit');
+  privateCommit(src, 'A private subject', { write: { 'lib/e.mjs': 'export const e = 1;\n' } });
+  const r = updateFrom(src, pub);
+  assert.equal(r.status, 0, r.stderr + r.stdout);
+  assert.equal(git(pub, 'log', '-1', '--format=%B'), 'Add the widget screen');
 });
 
 // The diff scan, on its own. The staged tree is scanned before it, so through the whole pipeline a planted

@@ -1,1 +1,1 @@
-/tmp/mint-export-srwm2b/docs/architecture/frontend.md
+/tmp/mint-export-yekNlP/docs/architecture/frontend.md

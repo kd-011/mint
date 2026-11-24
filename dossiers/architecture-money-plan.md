@@ -1,1 +1,1 @@
-/tmp/mint-export-srwm2b/docs/architecture/money-plan.md
+/tmp/mint-export-yekNlP/docs/architecture/money-plan.md

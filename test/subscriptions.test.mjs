@@ -16,6 +16,7 @@ import { billsCalendar } from '../lib/bills.mjs';
 import { runAlerts } from '../lib/alerts.mjs';
 import { createApi } from '../lib/api.mjs';
 import { HttpError } from '../lib/errors.mjs';
+import { addDays, zoneDate } from '../lib/dates.mjs';
 import {
   listSubscriptions, addSubscription, updateSubscription, deleteSubscription, setDetectedState, clearDetectedState, recurringKeys,
 } from '../lib/subscriptions.mjs';
@@ -25,12 +26,15 @@ const FLIX = 'testflix com';
 const quiet = (b) => b.db.prepare("UPDATE accounts SET last_synced_at = '2026-11-30T00:00:00.000Z'").run();
 const at = (d) => new Date(`${d}T02:00:00Z`);
 
-function flixBook({ pay = false } = {}) {
+function flixBook({ pay = false, today = TODAY } = {}) {
   const b = pay ? payBook() : book();
   quiet(b);
-  for (let n = 6; n >= 0; n--) b.add('acct_t_card', monthsBack('2026-10-15', n), -1599, 'TESTFLIX.COM          TESTVILLE    AU');
-  for (let n = 12; n >= 6; n--) b.add('acct_t_card', monthsBack('2026-10-10', n), -999, 'OLD TESTAPP');
-  if (pay) refreshMoney(b, TODAY);
+  // The charges sit just before `today` (default: the pinned TODAY gives 2026-10-15 and 2026-10-10).
+  const last = addDays(today, -2);
+  const old = addDays(last, -5);
+  for (let n = 6; n >= 0; n--) b.add('acct_t_card', monthsBack(last, n), -1599, 'TESTFLIX.COM          TESTVILLE    AU');
+  for (let n = 12; n >= 6; n--) b.add('acct_t_card', monthsBack(old, n), -999, 'OLD TESTAPP');
+  if (pay) refreshMoney(b, today);
   return b;
 }
 const statusOf = (list, key) => ['active', 'cancelled', 'dismissed', 'stopped'].find((g) => list[g].some((i) => i.merchant_key === key));
@@ -243,7 +247,9 @@ test('a state on a Play Store service survives the next charge arriving under a 
 
 let srv, base, ab;
 before(async () => {
-  ab = flixBook({ pay: true });
+  // The API reads the real clock, so this book is seeded relative to it: a fixed
+  // date ages the series into "stopped" and the test fails on any later day.
+  ab = flixBook({ pay: true, today: zoneDate() });
   const api = createApi({ db: ab.db, engine: { refresh() {}, runAi() {} }, ai: null, dataDir: mkdtempSync(join(tmpdir(), 'mint-subs-')), log() {} });
   srv = createServer(async (req, res) => {
     try {

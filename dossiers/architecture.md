@@ -1,1 +1,1 @@
-/tmp/mint-export-srwm2b/docs/ARCHITECTURE.md
+/tmp/mint-export-yekNlP/docs/ARCHITECTURE.md

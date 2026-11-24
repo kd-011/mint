@@ -41,6 +41,7 @@ node scripts/export-public.mjs --message "Fix the rollover bug"   # one new comm
 git -C ~/exports/mint-public log -1 --stat
 git -C ~/exports/mint-public diff HEAD~1  # read it
 node scripts/export-public.mjs --push     # pushes the ready commit
+# no --message: the commit message is composed from the private subjects since the last export
 ```
 
 What the script does:
@@ -51,7 +52,7 @@ What the script does:
 4. Scans the whole tree and every unpushed commit, message included. Any finding at any step puts the checkout back exactly as it was, commits nothing, and prints `file:line kind`, never the matched text.
 5. Does nothing, and says so, when the tree already matches. With `--push` it still pushes a commit an earlier run left unpushed.
 
-`--message` is the public commit message, so write it for a public reader: a short imperative subject, and a sentence on why if it is not obvious. The final scan covers it. The private sha of the last export lives in `<checkout>/.git/mint-export-state.json`. It is inside `.git`, so it never reaches the public tree or a push.
+`--message` is the public commit message when you pass one, so write it for a public reader: a short imperative subject, and a sentence on why if it is not obvious. Without it the script composes one, a dated subject plus the private commit subjects since the last export (a subject the scan flags is left out, and a private PR number or branch id is dropped), which is what the weekly job gets. `--from SHA` overrides where that list starts. The final scan covers either message. The private sha of the last export lives in `<checkout>/.git/mint-export-state.json`. It is inside `.git`, so it never reaches the public tree or a push.
 
 ### The image gate
 

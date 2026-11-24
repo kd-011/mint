@@ -1,1 +1,1 @@
-/tmp/mint-export-srwm2b/docs/architecture/running.md
+/tmp/mint-export-yekNlP/docs/architecture/running.md

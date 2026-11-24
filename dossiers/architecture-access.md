@@ -1,1 +1,1 @@
-/tmp/mint-export-srwm2b/docs/architecture/access.md
+/tmp/mint-export-yekNlP/docs/architecture/access.md

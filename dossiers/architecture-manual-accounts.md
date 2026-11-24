@@ -1,1 +1,1 @@
-/tmp/mint-export-srwm2b/docs/architecture/manual-accounts.md
+/tmp/mint-export-yekNlP/docs/architecture/manual-accounts.md
